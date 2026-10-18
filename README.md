@@ -2,44 +2,19 @@
 
 This the repo for the assignment, I've written the formulas I implemented below in a nice form (courtesy of Claudius Maximus Pro)
 
-## Running the simulation
-
-Run `python main.py` to open the original Matplotlib experiment UI with its
-parameter sliders, detector profile, and Fraunhofer estimate. In 2D, choose
-**CPU** for the Numba backend, **C++** for the native C++ backend, or **GPU**
-for PyTorch. The C++ shared library is compiled automatically on its first
-use; a C++17 compiler such as g++ must be available on `PATH` (or selected with
-the `CXX` environment variable). Select **3D** and **GPU** to open the PyVista
-wavefront viewer; 3D CPU remains in the original app. Slider settings,
-wave/particle mode, and coherence are passed to the 3D viewer when it opens.
-The viewer shows thinner, lower-opacity 3D
-wavefronts and compares the detector profile against the Fraunhofer estimate.
-Its controls also tune wavelength, slit count/width/pitch/height, screen
-distance, incidence angle, source distance, simulation steps, and detection
-rate. The circular-apertures toggle uses slit width as the diameter.
-The 2D solver runs on a 600-row grid while the UI displays the centered
-400-row crop, keeping the absorbing sponge outside the visible fringe area.
-The 3D solver uses a wider absorbing sponge near the edges of the displayed
-160-by-160 y/z field of view, while the hard simulation boundaries remain
-hidden beyond the view. This gives outgoing waves more room to decay before
-they can reflect back into the experiment.
-PyVista and PyTorch are required for the 3D GPU viewer; install PyVista with
-`python -m pip install pyvista` and use a suitable CUDA-enabled PyTorch build.
-
 ### Code map
 
-- `main.py` - interactive controls, plots, and animation.
-- `physics_numba.py` - 2D CPU wave solver.
-- `physics_torch.py` - 2D PyTorch solver (CPU or CUDA GPU).
-- `physics3d.py` - 3D wave solver (Numba CPU or PyTorch CPU/CUDA).
-- `vistaengine.py` - live PyVista/VTK 3D wavefront and detector viewer.
+- `main.py` - main UI
+- `physics_numba.py` - 2D CPU wave ( parallelized ) .
+- `physics_torch.py` - 2D PyTorch (CPU or CUDA GPU).
+- `physics3d.py` - 3D wave (Numba CPU or PyTorch CPU/CUDA).
+- `vistaengine.py` - 3D UI.
 - `sampling.py` and `sampling3d.py` - particle/detection sampling.
-- `reference.py` - Fraunhofer reference patterns for comparison.
+- `reference.py` - Fraunhofer reference patterns for compariso.
 - `config.py` - simulation parameters.
 
 The physics modules are alternative backends or dimensions used by the same
-simulation UI, not separate simulations to launch individually. `build/`,
-`dist/`, and `__pycache__/` contain generated files.
+simulation UI, not separate simulations to launch individually. 
 
 ## Tech stack
 
@@ -48,10 +23,9 @@ But first, the tech I used to do this:
   -  Numpy
   -  numba ( for parallelization and caching )
   -  matplotlib ( for the UI , nothing fancy)
-  
+  -  pyvista, vtk
+- C++ 
 
-Performance on CPU:
-- Very fluid at 30fps, everything is super optimized because we are doing matrix multiplication using numpy.
 
 ## Formulas
 
@@ -286,6 +260,3 @@ $$
 r(y')=\sqrt{L_s^2+(y'-y_s)^2}.
 $$
 
-### Summary
-
-The interference pattern arises from the physical superposition of waves passing through the two openings. The numerical wave equation propagates the field, the barrier imposes the slit geometry, and the detector measures the time-averaged squared total field. The Fraunhofer reference provides an independent far-field comparison, with corrections for the grid's numerical dispersion.
