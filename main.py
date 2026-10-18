@@ -27,6 +27,12 @@ except Exception as exc:
  
     def cuda_available():
         return False
+
+try:
+    from physics_cpp import CppWaveSim2D
+except Exception as exc:
+    CppWaveSim2D = None
+    print("C++ 2D backend unavailable:", exc)
  
 try:
     import physics3d
@@ -69,9 +75,11 @@ ax_f3.set_visible(False)
 POS2 = {"f": ax_f.get_position().frozen(), "s": ax_s.get_position().frozen(),
         "p": ax_p.get_position().frozen()}
 
-im = ax_f.imshow(np.zeros((p2.ny, p2.nx)), origin="lower", cmap="coolwarm", vmin=-1, vmax=1,
+im = ax_f.imshow(np.zeros((min(p2.ny, p2.view_ny), p2.nx)), origin="lower",
+                 cmap="coolwarm", vmin=-1, vmax=1,
                  interpolation="nearest", aspect="auto")
-wall_im = ax_f.imshow(np.zeros((p2.ny, p2.nx, 4), np.uint8), origin="lower",
+wall_im = ax_f.imshow(np.zeros((min(p2.ny, p2.view_ny), p2.nx, 4), np.uint8),
+                      origin="lower",
                       interpolation="nearest", aspect="auto")
 src_pts, = ax_f.plot([], [], "g.", ms=3)
 detector_line = ax_f.axvline(p2.x_det, color="k", lw=2)
@@ -219,7 +227,7 @@ s_ppf = make_slider([X2, ROWS[3], W, 0.03], "mean photons/frame", 1, 100, 10, 1)
 s_h = make_slider([X2, ROWS[4], W, 0.03], "slit height (μm) [3D]", 100, 1200, p3.slit_height_um, 10)
  
 rb_dim = RadioButtons(fig.add_axes([0.005, 0.27, 0.085, 0.07]), ["2D", "3D"])
-rb_dev = RadioButtons(fig.add_axes([0.005, 0.19, 0.085, 0.07]), ["CPU", "GPU"])
+rb_dev = RadioButtons(fig.add_axes([0.005, 0.18, 0.085, 0.085]), ["CPU", "C++", "GPU"])
 rb_mode = RadioButtons(fig.add_axes([0.005, 0.11, 0.085, 0.07]), ["Wave", "Particle"])
 rb_coh = RadioButtons(fig.add_axes([0.005, 0.03, 0.085, 0.07]), ["Coherent", "Incoherent"])
 for rb in (rb_dim, rb_dev, rb_mode, rb_coh):
@@ -262,11 +270,13 @@ def configure_geometry():
     """Screen coordinates, slider values and axes layout for the active dimension."""
     global screen_pixel_size_mm, screen_y_mm, screen_z_half, screen_rows
     global screen_arrival_step, screen_color
- 
+
     half = p.screen_half_height_mm
-    screen_pixel_size_mm = 2 * half / p.ny
-    screen_rows = np.arange(p.ny)
-    screen_y_mm = (np.arange(p.ny) + 0.5) * screen_pixel_size_mm - half
+    view_ny = min(p.ny, p.view_ny) if DIM == 2 else p.ny
+    view_start = (p.ny - view_ny) // 2
+    screen_rows = np.arange(view_start, view_start + view_ny)
+    screen_pixel_size_mm = 2 * half / view_ny
+    screen_y_mm = (np.arange(view_ny) + 0.5) * screen_pixel_size_mm - half
     screen_z_half = p.nz * screen_pixel_size_mm / 2
     screen_color = wavelength_to_rgb(p.wavelength_nm)
     screen_arrival_step = int(np.ceil((p.x_det - p.x_src) / p.courant))
@@ -301,7 +311,10 @@ def set_layout():
         ax_s.set_xlabel("")
         ax_s.set_title("detector", fontsize=8)
         ax_f.set_xlim(-0.5, p.x_det + 8.5)
-        ax_f.set_ylim(-0.5, p.ny - 0.5)
+        ax_f.set_ylim(screen_rows[0] - 0.5, screen_rows[-1] + 0.5)
+        view_extent = (-0.5, p.nx - 0.5, screen_rows[0] - 0.5, screen_rows[-1] + 0.5)
+        im.set_extent(view_extent)
+        wall_im.set_extent(view_extent)
         detector_line.set_xdata([p.x_det, p.x_det])
     else:
         zh = screen_z_half
@@ -348,6 +361,10 @@ def build_sim():
     if DIM == 2:
         if dev == "GPU":
             sim = TorchWaveSim2D(p, "cuda")
+        elif dev == "C++":
+            if CppWaveSim2D is None:
+                raise RuntimeError("The C++ 2D backend could not be imported.")
+            sim = CppWaveSim2D(p)
         elif NumbaSim2D is not None:
             sim = NumbaSim2D(p)
             sim.label = "CPU numba"
@@ -378,8 +395,10 @@ def refresh_static():
     global fraunhofer_profile, wall_bars
  
     if DIM == 2:
-        rgba = np.zeros((p.ny, p.nx, 4), np.uint8)
-        rgba[~sim.slit_open, p.x_wall:p.x_wall + p.wall_thickness] = (25, 25, 25, 255)
+        rgba = np.zeros((len(screen_rows), p.nx, 4), np.uint8)
+        rgba[~sim.slit_open[screen_rows], p.x_wall:p.x_wall + p.wall_thickness] = (
+            25, 25, 25, 255
+        )
         wall_im.set_data(rgba)
         src_pts.set_data(np.full(len(sim.src_y), p.x_src), sim.src_y)
         fraunhofer_profile = fraunhofer(p, screen_rows, sim.slit_open, sim.src_y[0])
@@ -514,7 +533,7 @@ def launch_gpu_viewer():
  
  
 def on_dim(label):
-    global DIM
+    global DIM, DEV
     new = 3 if label == "3D" else 2
     if new == DIM:
         return
@@ -522,18 +541,32 @@ def on_dim(label):
         radio_quiet(rb_dim, 0) 
         launch_gpu_viewer()
         return
+    if new == 3 and DEV == "C++":
+        DEV = "CPU"
+        radio_quiet(rb_dev, 0)
+        say("The C++ backend supports 2D only; using the 3D CPU backend.")
     DIM = new
     activate()
- 
- 
+
 def on_dev(label):
     global DEV
     if label == "GPU" and DIM == 3 and cuda_available():
         radio_quiet(rb_dev, 0)
         launch_gpu_viewer()
         return
+    if DIM == 3 and label == "C++":
+        radio_quiet(rb_dev, 0)
+        say("The C++ backend supports 2D only; using the 3D CPU backend.")
+        return
+    previous = DEV
     DEV = label
-    build_sim()
+    try:
+        build_sim()
+    except Exception as exc:
+        DEV = previous
+        radio_quiet(rb_dev, ["CPU", "C++", "GPU"].index(previous))
+        say(f"Could not start the {label} backend: {exc}")
+        return
     set_layout()
     refresh_static()
     clear_particles()
@@ -623,7 +656,7 @@ def update(frame):
             target = max(float(np.percentile(np.abs(region), 99.5)), 0.02)
             state["scale"] = 0.8 * state["scale"] + 0.2 * target
     if DIM == 2:
-        im.set_data(disp)
+        im.set_data(disp[screen_rows])
         im.set_clim(-state["scale"], state["scale"])
     elif frame % SURF_EVERY == 0:
         draw_3d(disp)
@@ -633,7 +666,7 @@ def update(frame):
  
     if p.particle_mode:
         hist = sampler.hist
-        counts = hist if DIM == 2 else hist.sum(axis=1)
+        counts = hist[screen_rows] if DIM == 2 else hist.sum(axis=1)
         max_count = float(counts.max())
         total_count = float(counts.sum())
         line_H.set_data(counts, screen_y_mm)
@@ -647,7 +680,8 @@ def update(frame):
             hit_sc.set_offsets(sampler.recent)
             screen_hit_sc.set_offsets(np.column_stack((
                 np.full(len(sampler.recent), 0.5),
-                (sampler.recent[:, 1] + 0.5) * screen_pixel_size_mm - half,
+                (sampler.recent[:, 1] - screen_rows[0] + 0.5)
+                * screen_pixel_size_mm - half,
             )))
             screen_hits = high_res_screen(counts, p.detector_oversampling)
             strip.set_data(screen_hits[:, None])
@@ -672,6 +706,8 @@ def update(frame):
             set_status(f"{int(total_count)} detections")
     else:
         profile = det_profile()
+        if DIM == 2:
+            profile = profile[screen_rows]
         detector_peak = float(profile.max())
         wave_profile = profile / max(detector_peak, 1e-12)
         line_I.set_data(wave_profile, screen_y_mm)

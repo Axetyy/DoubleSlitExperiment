@@ -1,3 +1,5 @@
 /build/
 /dist/
 __pycache__/
+# Built by the optional native C++ backend.
+/C-port/libphysics.*

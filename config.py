@@ -9,7 +9,8 @@ class Params:
     x_det: int = 480
     
     nx: int = 1000
-    ny: int = 400
+    ny: int = 600
+    view_ny: int = 400
 
     wall_thickness: int = 4
     sponge: int = 40
