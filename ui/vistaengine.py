@@ -8,9 +8,9 @@ import torch
 import vtk
 
 from config import params_3d
-from physics3d import TorchWaveSim3D
+from physics.physics3d import TorchWaveSim3D
 from reference import fraunhofer3d
-from sampling3d import ParticleSampler3D
+from sampling.sampling3d import ParticleSampler3D
 
 RENDER_STRIDE = 3
 DRAW_EVERY = 2

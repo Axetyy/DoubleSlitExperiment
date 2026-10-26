@@ -6,43 +6,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from matplotlib.gridspec import GridSpec
-from matplotlib.widgets import Button,RadioButtons,Slider
+from matplotlib.widgets import Button, RadioButtons
 
-from config import Params,params_3d
-from reference import fraunhofer,fraunhofer3d
-from sampling import ParticleSampler
-from sampling3d import ParticleSampler3D
+from config import Params, params_3d
+from reference import fraunhofer, fraunhofer3d
+from sampling.sampling import ParticleSampler
+from sampling.sampling3d import ParticleSampler3D
 
-try:
-    from physics_numba import WaveSimulator as NumbaSim2D
-except Exception as exc:
-    NumbaSim2D = None
-    print("Numba 2D backend unavailable:", exc)
- 
-try:
-    from physics_torch import TorchWaveSim2D ,cuda_available
-except Exception as exc:
-    TorchWaveSim2D = None
-    print("Torch 2D backend unavailable:", exc)
- 
-    def cuda_available():
-        return False
+from utils import wavelength_to_rgb, high_res_screen, runs
+from ui.ui import make_slider, quiet_set, retarget, radio_quiet
 
-try:
-    from physics_cpp import CppWaveSim2D
-except Exception as exc:
-    CppWaveSim2D = None
-    print("C++ 2D backend unavailable:", exc)
- 
-try:
-    import physics3d
-except Exception as exc:
-    physics3d = None
-    print("3D backend unavailable:", exc)
-    
 DIM = 2
 DEV = "CPU"
-p2=Params()
+p2 = Params()
 p3 = params_3d()
 p = p2
 sim = None
@@ -62,8 +38,7 @@ wall_bars = []
 SURF_STEP = 4     
 SURF_EVERY = 2  
 
-
-
+# --- Figure & Layout Setup ---
 fig = plt.figure(figsize=(11, 8.8))
 gs = GridSpec(1, 3, width_ratios=[4, 0.3, 1.1], left=0.05, right=0.98, top=0.95,
               bottom=0.40, wspace=0.03)
@@ -79,8 +54,7 @@ im = ax_f.imshow(np.zeros((min(p2.ny, p2.view_ny), p2.nx)), origin="lower",
                  cmap="coolwarm", vmin=-1, vmax=1,
                  interpolation="nearest", aspect="auto")
 wall_im = ax_f.imshow(np.zeros((min(p2.ny, p2.view_ny), p2.nx, 4), np.uint8),
-                      origin="lower",
-                      interpolation="nearest", aspect="auto")
+                      origin="lower", interpolation="nearest", aspect="auto")
 src_pts, = ax_f.plot([], [], "g.", ms=3)
 detector_line = ax_f.axvline(p2.x_det, color="k", lw=2)
 hit_sc = ax_f.scatter([], [], s=4, c="darkorange", edgecolors="none", visible=False)
@@ -96,7 +70,7 @@ ax_f3.set_ylabel("y", fontsize=8)
 ax_f3.set_zlabel("z", fontsize=8)
 ax_f3.view_init(elev=30, azim=-65)
  
-# detector strip
+# Detector strip & profile setups
 strip = ax_s.imshow(np.zeros((p2.ny * p2.detector_oversampling, 1, 3), dtype=np.float32),
                     origin="lower",
                     extent=(0, 1, -p2.screen_half_height_mm, p2.screen_half_height_mm),
@@ -105,7 +79,6 @@ screen_hit_sc = ax_s.scatter([], [], s=10, c="darkorange", edgecolors="white",
                              linewidths=0.35, zorder=3, visible=False)
 ax_s.set_ylabel("position (mm)", fontsize=8)
  
-# profile
 line_I, = ax_p.plot([], [], "b", lw=1.4, label="wave intensity", visible=True)
 line_H, = ax_p.plot([], [], "k", lw=1, drawstyle="steps-mid", label="cumulative detections",
                     visible=False)
@@ -119,7 +92,6 @@ ax_p.set_ylabel("position (mm)")
 ax_p.legend(handles=[line_I, line_F], loc="upper right", fontsize=7)
  
 note = fig.text(0.5, 0.005, "", ha="center", fontsize=8, color="crimson")
- 
 
 def say(msg):
     note.set_text(msg) 
@@ -128,103 +100,30 @@ def set_status(msg):
     status.set_text(msg)
     status3.set_text(msg)
 
- 
 def get_field():
     return sim.field_slice() if hasattr(sim, "field_slice") else sim.u
- 
  
 def det_profile():
     return sim.detector_profile() if hasattr(sim, "detector_profile") else sim.I_det
  
- 
 def det_image():
     return sim.detector_image()
- 
- 
-def wavelength_to_rgb(wavelength_nm):
-    w = np.asarray(wavelength_nm, dtype=float)
- 
-    r = np.zeros_like(w)
-    g = np.zeros_like(w)
-    b = np.zeros_like(w)
- 
-    m = (w >= 380) & (w < 440)
-    r[m] = -(w[m] - 440) / (440 - 380)
-    g[m] = 0
-    b[m] = 1
- 
-    m = (w >= 440) & (w < 490)
-    r[m] = 0
-    g[m] = (w[m] - 440) / (490 - 440)
-    b[m] = 1
- 
-    m = (w >= 490) & (w < 510)
-    r[m] = 0
-    g[m] = 1
-    b[m] = -(w[m] - 510) / (510 - 490)
- 
-    m = (w >= 510) & (w < 580)
-    r[m] = (w[m] - 510) / (580 - 510)
-    g[m] = 1
-    b[m] = 0
- 
-    m = (w >= 580) & (w < 645)
-    r[m] = 1
-    g[m] = -(w[m] - 645) / (645 - 580)
-    b[m] = 0
- 
-    m = (w >= 645) & (w <= 750)
-    r[m] = 1
-    g[m] = 0
-    b[m] = 0
- 
-    factor = np.ones_like(w)
- 
-    m = (w >= 380) & (w < 420)
-    factor[m] = 0.3 + 0.7 * ((w[m] - 380) / 40)
- 
-    m = (w > 700) & (w <= 750)
-    factor[m] = 0.3 + 0.7 * ((750 - w[m]) / 50)
- 
-    return np.stack([r * factor, g * factor, b * factor], axis=-1)
- 
- 
-def high_res_screen(intensity, oversampling=4):
-    ny = len(intensity)
-    y = np.arange(ny)
-    y_hi = (np.arange(ny * oversampling) + 0.5) / oversampling - 0.5
-    return np.interp(y_hi, y, intensity)
- 
- 
-screen_color = wavelength_to_rgb(p.wavelength_nm)
- 
- 
-def runs(mask):
 
-    out, start = [], 0
-    for i in range(1, len(mask) + 1):
-        if i == len(mask) or mask[i] != mask[start]:
-            out.append((start, i, bool(mask[start])))
-            start = i
-    return out
- 
-def make_slider(rect, label, lo, hi, init, step):
-    return Slider(fig.add_axes(rect), label, lo, hi, valinit=init, valstep=step)
- 
- 
+screen_color = wavelength_to_rgb(p.wavelength_nm)
+
+# Sliders & Radio Buttons
 ROWS = [0.30, 0.24, 0.18, 0.12, 0.06]
 X1, X2, W = 0.31, 0.74, 0.19
-s_lam = make_slider([X1, ROWS[0], W, 0.03], "wavelength (nm)", 400, 700, p2.wavelength_nm, 0.1)
-s_n = make_slider([X1, ROWS[1], W, 0.03], "# slits", 1, 7, p2.n_slits, 1)
-s_a = make_slider([X1, ROWS[2], W, 0.03], "slit width (μm)", 10, 80, p2.slit_width_um, 1)
-s_d = make_slider([X1, ROWS[3], W, 0.03], "slit pitch (μm)", 100, 500, p2.slit_spacing_um, 5)
-s_src = make_slider([X1, ROWS[4], W, 0.03], "source dist (cells)", 10, 110,
-                    p2.x_wall - p2.x_src, 1)
-s_L = make_slider([X2, ROWS[0], W, 0.03], "screen L (m)", 0.5, 3.5, p2.screen_distance_m, 0.1)
-s_ang = make_slider([X2, ROWS[1], W, 0.03], "incidence (deg)", -5, 5, p2.source_angle_deg, 0.1)
-s_spf = make_slider([X2, ROWS[2], W, 0.03], "steps/frame", 1, 30, 10, 1)
-s_ppf = make_slider([X2, ROWS[3], W, 0.03], "mean photons/frame", 1, 100, 10, 1)
-s_h = make_slider([X2, ROWS[4], W, 0.03], "slit height (μm) [3D]", 100, 1200, p3.slit_height_um, 10)
+s_lam = make_slider(fig, [X1, ROWS[0], W, 0.03], "wavelength (nm)", 400, 700, p2.wavelength_nm, 0.1)
+s_n = make_slider(fig, [X1, ROWS[1], W, 0.03], "# slits", 1, 7, p2.n_slits, 1)
+s_a = make_slider(fig, [X1, ROWS[2], W, 0.03], "slit width (μm)", 10, 80, p2.slit_width_um, 1)
+s_d = make_slider(fig, [X1, ROWS[3], W, 0.03], "slit pitch (μm)", 100, 500, p2.slit_spacing_um, 5)
+s_src = make_slider(fig, [X1, ROWS[4], W, 0.03], "source dist (cells)", 10, 110, p2.x_wall - p2.x_src, 1)
+s_L = make_slider(fig, [X2, ROWS[0], W, 0.03], "screen L (m)", 0.5, 3.5, p2.screen_distance_m, 0.1)
+s_ang = make_slider(fig, [X2, ROWS[1], W, 0.03], "incidence (deg)", -5, 5, p2.source_angle_deg, 0.1)
+s_spf = make_slider(fig, [X2, ROWS[2], W, 0.03], "steps/frame", 1, 30, 10, 1)
+s_ppf = make_slider(fig, [X2, ROWS[3], W, 0.03], "mean photons/frame", 1, 100, 10, 1)
+s_h = make_slider(fig, [X2, ROWS[4], W, 0.03], "slit height (μm) [3D]", 100, 1200, p3.slit_height_um, 10)
  
 rb_dim = RadioButtons(fig.add_axes([0.005, 0.27, 0.085, 0.07]), ["2D", "3D"])
 rb_dev = RadioButtons(fig.add_axes([0.005, 0.18, 0.085, 0.085]), ["CPU", "C++", "GPU"])
@@ -233,41 +132,34 @@ rb_coh = RadioButtons(fig.add_axes([0.005, 0.03, 0.085, 0.07]), ["Coherent", "In
 for rb in (rb_dim, rb_dev, rb_mode, rb_coh):
     for lab in rb.labels:
         lab.set_fontsize(8)
+
 b_reset = Button(fig.add_axes([0.10, 0.27, 0.07, 0.04]), "Reset")
 b_pause = Button(fig.add_axes([0.10, 0.20, 0.07, 0.04]), "Pause")
- 
- 
-def quiet_set(slider, val):
-    ev = slider.eventson
-    slider.eventson = False
-    try:
-        slider.set_val(val)
-    finally:
-        slider.eventson = ev
- 
- 
-def retarget(slider, lo, hi, val):
-    ev = slider.eventson
-    slider.eventson = False
-    try:
-        slider.valmin, slider.valmax = lo, hi
-        slider.ax.set_xlim(lo, hi)
-        slider.set_val(val)
-    finally:
-        slider.eventson = ev
- 
- 
-def radio_quiet(rb, index):
-    ev = rb.eventson
-    rb.eventson = False
-    try:
-        rb.set_active(index)
-    finally:
-        rb.eventson = ev
- 
- 
+
+# Backend import handling inside main
+try:
+    from physics.physics_numba import WaveSimulator as NumbaSim2D
+except Exception:
+    NumbaSim2D = None
+
+try:
+    from physics.physics_torch import TorchWaveSim2D, cuda_available
+except Exception:
+    TorchWaveSim2D = None
+    def cuda_available(): return False
+
+try:
+    from physics.physics_cpp import CppWaveSim2D
+except Exception:
+    CppWaveSim2D = None
+
+try:
+    import physics.physics3d as physics3d
+except Exception:
+    physics3d = None
+
+
 def configure_geometry():
-    """Screen coordinates, slider values and axes layout for the active dimension."""
     global screen_pixel_size_mm, screen_y_mm, screen_z_half, screen_rows
     global screen_arrival_step, screen_color
 
@@ -291,10 +183,8 @@ def configure_geometry():
     retarget(s_src, lo, p.x_wall - p.sponge, p.x_wall - p.x_src)
     quiet_set(s_h, p.slit_height_um)
     s_h.ax.set_visible(DIM == 3)
- 
     set_layout()
- 
- 
+
 def set_layout():
     half = p.screen_half_height_mm
     if DIM == 2:
@@ -335,23 +225,19 @@ def set_layout():
     ax_p.set_ylim(-half, half)
     ax_f.set_title(f"qualitative wave field (grid units) - {backend_label}", fontsize=9)
     ax_f3.set_title(f"z = centre slice, wall, detector plane - {backend_label}", fontsize=9)
- 
- 
+
 def set_3d_limits():
     xmax = p.x_det + 8
     ax_f3.set_xlim(0, xmax)
     ax_f3.set_ylim(0, p.ny)
     ax_f3.set_zlim(0, p.nz)
     ax_f3.set_box_aspect((xmax, p.ny, p.nz))
- 
- 
-# backend creation
+
 def build_sim():
     global sim, sampler, backend_label, DEV
- 
     dev = DEV
     if dev == "GPU" and not cuda_available():
-        say("CUDA GPU not available (needs a CUDA build of PyTorch) - running on CPU instead.")
+        say("CUDA GPU not available - running on CPU instead.")
         dev = "CPU"
         DEV = "CPU"
         radio_quiet(rb_dev, 0)
@@ -363,7 +249,7 @@ def build_sim():
             sim = TorchWaveSim2D(p, "cuda")
         elif dev == "C++":
             if CppWaveSim2D is None:
-                raise RuntimeError("The C++ 2D backend could not be imported.")
+                raise RuntimeError("C++ backend unavailable.")
             sim = CppWaveSim2D(p)
         elif NumbaSim2D is not None:
             sim = NumbaSim2D(p)
@@ -371,11 +257,11 @@ def build_sim():
         elif TorchWaveSim2D is not None:
             sim = TorchWaveSim2D(p, "cpu")
         else:
-            raise RuntimeError("Install numba or torch to run the simulation.")
+            raise RuntimeError("Install numba or torch.")
         sampler = ParticleSampler(p.ny, p.x_det)
     else:
         if physics3d is None:
-            raise RuntimeError("physics3d.py could not be imported.")
+            raise RuntimeError("physics3d unavailable.")
         if dev == "GPU":
             sim = physics3d.TorchWaveSim3D(p, "cuda")
         elif physics3d.HAVE_NUMBA:
@@ -385,20 +271,15 @@ def build_sim():
         sampler = ParticleSampler3D(p.ny, p.nz, p.x_det)
  
     backend_label = f"{DIM}D | {getattr(sim, 'label', 'CPU')}"
- 
- 
+
 def clear_particles():
     sampler.reset()
- 
- 
+
 def refresh_static():
     global fraunhofer_profile, wall_bars
- 
     if DIM == 2:
         rgba = np.zeros((len(screen_rows), p.nx, 4), np.uint8)
-        rgba[~sim.slit_open[screen_rows], p.x_wall:p.x_wall + p.wall_thickness] = (
-            25, 25, 25, 255
-        )
+        rgba[~sim.slit_open[screen_rows], p.x_wall:p.x_wall + p.wall_thickness] = (25, 25, 25, 255)
         wall_im.set_data(rgba)
         src_pts.set_data(np.full(len(sim.src_y), p.x_src), sim.src_y)
         fraunhofer_profile = fraunhofer(p, screen_rows, sim.slit_open, sim.src_y[0])
@@ -424,8 +305,7 @@ def refresh_static():
         fraunhofer_profile = fraunhofer3d(p, screen_rows, sim.slit_open, sim.slit_open_z,
                                           sim.src_y[0], sim.src_z)
     line_F.set_data(fraunhofer_profile, screen_y_mm)
- 
- 
+
 def apply_mode_visuals():
     pm = p.particle_mode
     im.set_alpha(0.3 if pm else 1.0)
@@ -437,13 +317,10 @@ def apply_mode_visuals():
     ax_p.set_xlabel("detections per screen bin" if pm else "normalized wave intensity")
     ax_p.set_title("cumulative photon detections" if pm else "simulated detector intensity")
     ax_p.set_xlim(0, 1.05)
-    ax_p.legend(handles=[line_H, line_F] if pm else [line_I, line_F],
-                loc="upper right", fontsize=7)
+    ax_p.legend(handles=[line_H, line_F] if pm else [line_I, line_F], loc="upper right", fontsize=7)
     clear_particles()
- 
- 
+
 def activate():
-    """(Re)build everything for the current DIM / DEV selection."""
     global p, slice_surf, screen_surf
     p = p3 if DIM == 3 else p2
     p.coherent = rb_coh.value_selected == "Coherent"
@@ -459,12 +336,10 @@ def activate():
     refresh_static()
     apply_mode_visuals()
     state["scale"] = 1.0
- 
- 
-# callbacks
+
+# Callbacks and Event Handlers
 def on_param(_=None):
     global screen_arrival_step, screen_color
- 
     p.wavelength_nm = s_lam.val
     p.slit_width_um = s_a.val
     p.slit_spacing_um = s_d.val
@@ -474,8 +349,7 @@ def on_param(_=None):
     p.x_det = p.x_wall + int(round(p.cells_per_m * p.screen_distance_m))
     p.source_angle_deg = s_ang.val
  
-    p.wavelength = float(np.interp(p.wavelength_nm, [400, 700],
-                                   [p.lam_cells_min, p.lam_cells_max]))
+    p.wavelength = float(np.interp(p.wavelength_nm, [400, 700], [p.lam_cells_min, p.lam_cells_max]))
     screen_color = wavelength_to_rgb(p.wavelength_nm)
     p.n_slits = int(s_n.val)
     p.slit_width = p.slit_width_um * p.um_to_cells
@@ -492,72 +366,20 @@ def on_param(_=None):
     sim.reset()
     refresh_static()
     clear_particles()
- 
- 
-def launch_gpu_viewer():
-    here = os.path.dirname(os.path.abspath(__file__))
-    script = os.path.join(here, "vistaengine.py")
-    try:
-        gpu_params = p3
-        gpu_params.wavelength_nm = s_lam.val
-        gpu_params.n_slits = int(s_n.val)
-        gpu_params.slit_width_um = s_a.val
-        gpu_params.slit_spacing_um = s_d.val
-        gpu_params.slit_height_um = s_h.val
-        gpu_params.screen_distance_m = s_L.val
-        gpu_params.source_angle_deg = s_ang.val
-        source_distance = int(s_src.val)
-        source_distance = int(np.clip(
-            source_distance,
-            gpu_params.sponge,
-            gpu_params.x_wall - gpu_params.sponge,
-        ))
-        args = [
-            "--wavelength-nm", str(gpu_params.wavelength_nm),
-            "--slits", str(gpu_params.n_slits),
-            "--slit-width-um", str(gpu_params.slit_width_um),
-            "--slit-spacing-um", str(gpu_params.slit_spacing_um),
-            "--slit-height-um", str(gpu_params.slit_height_um),
-            "--screen-distance-m", str(gpu_params.screen_distance_m),
-            "--source-angle", str(gpu_params.source_angle_deg),
-            "--source-distance", str(source_distance),
-            "--steps", str(int(s_spf.val)),
-            "--photons", str(int(s_ppf.val)),
-            "--coherence", rb_coh.value_selected.lower(),
-            "--mode", rb_mode.value_selected.lower(),
-        ]
-        subprocess.Popen([sys.executable, script, *args], cwd=here)
-        say("3D PyVista viewer opened in a new window.")
-    except Exception as exc:
-        say(f"Could not start the PyVista viewer: {exc}")
- 
- 
+
 def on_dim(label):
     global DIM, DEV
     new = 3 if label == "3D" else 2
     if new == DIM:
         return
     if new == 3 and DEV == "GPU" and cuda_available():
-        radio_quiet(rb_dim, 0) 
-        launch_gpu_viewer()
+        radio_quiet(rb_dim, 0)
         return
-    if new == 3 and DEV == "C++":
-        DEV = "CPU"
-        radio_quiet(rb_dev, 0)
-        say("The C++ backend supports 2D only; using the 3D CPU backend.")
     DIM = new
     activate()
 
 def on_dev(label):
     global DEV
-    if label == "GPU" and DIM == 3 and cuda_available():
-        radio_quiet(rb_dev, 0)
-        launch_gpu_viewer()
-        return
-    if DIM == 3 and label == "C++":
-        radio_quiet(rb_dev, 0)
-        say("The C++ backend supports 2D only; using the 3D CPU backend.")
-        return
     previous = DEV
     DEV = label
     try:
@@ -565,35 +387,30 @@ def on_dev(label):
     except Exception as exc:
         DEV = previous
         radio_quiet(rb_dev, ["CPU", "C++", "GPU"].index(previous))
-        say(f"Could not start the {label} backend: {exc}")
+        say(f"Could not start {label}: {exc}")
         return
     set_layout()
     refresh_static()
     clear_particles()
- 
- 
+
 def on_mode(label):
     p.particle_mode = label == "Particle"
     apply_mode_visuals()
- 
- 
+
 def on_coherence(label):
     p.coherent = label == "Coherent"
     sim.reset()
     refresh_static()
     clear_particles()
- 
- 
+
 def on_reset(_):
     sim.reset()
     clear_particles()
- 
- 
+
 def on_pause(_):
     state["paused"] = not state["paused"]
     b_pause.label.set_text("Resume" if state["paused"] else "Pause")
- 
- 
+
 for s in (s_lam, s_n, s_a, s_d, s_L, s_ang, s_src, s_h):
     s.on_changed(on_param)
 rb_dim.on_clicked(on_dim)
@@ -602,13 +419,9 @@ rb_mode.on_clicked(on_mode)
 rb_coh.on_clicked(on_coherence)
 b_reset.on_clicked(on_reset)
 b_pause.on_clicked(on_pause)
- 
- 
-# ---- 3D drawing ----------------------------------------------------------------
+
 def draw_3d(disp):
-    """Mid-plane field as a coloured plane + the detector plane at x = x_det."""
     global slice_surf, screen_surf
- 
     cmap = plt.get_cmap("coolwarm")
     xs = min(p.nx, p.x_det + 9)
     sub = disp[::SURF_STEP, :xs:SURF_STEP]
@@ -639,9 +452,7 @@ def draw_3d(disp):
         screen_surf.remove()
     screen_surf = ax_f3.plot_surface(Xg, Yg, Zg, facecolors=colors, rstride=1, cstride=1,
                                      shade=False, linewidth=0, antialiased=False)
- 
- 
-# ---- animation -----------------------------------------------------------------
+
 def update(frame):
     if not state["paused"]:
         sim.step_n(int(s_spf.val))
@@ -671,30 +482,24 @@ def update(frame):
         total_count = float(counts.sum())
         line_H.set_data(counts, screen_y_mm)
         line_H.set_visible(max_count > 0)
-        expected_counts = (
-            fraunhofer_profile * total_count / max(fraunhofer_profile.sum(), 1e-12)
-        )
+        expected_counts = (fraunhofer_profile * total_count / max(fraunhofer_profile.sum(), 1e-12))
         line_F.set_data(expected_counts, screen_y_mm)
         ax_p.set_xlim(0, max(1, max(max_count, float(expected_counts.max())) * 1.1))
         if DIM == 2:
             hit_sc.set_offsets(sampler.recent)
-            screen_hit_sc.set_offsets(np.column_stack((
+            screen_hit_sc.set_offsets(np.column_space((
                 np.full(len(sampler.recent), 0.5),
-                (sampler.recent[:, 1] - screen_rows[0] + 0.5)
-                * screen_pixel_size_mm - half,
-            )))
+                (sampler.recent[:, 1] - screen_rows[0] + 0.5) * screen_pixel_size_mm - half,
+            )) if len(sampler.recent) > 0 else np.empty((0, 2)))
             screen_hits = high_res_screen(counts, p.detector_oversampling)
             strip.set_data(screen_hits[:, None])
             strip.set_clim(0, max(1, max_count))
         else:
             rec = sampler.recent
-            if len(rec):
-                offsets = np.column_stack((
-                    (rec[:, 1] + 0.5) * screen_pixel_size_mm - screen_z_half,
-                    (rec[:, 0] + 0.5) * screen_pixel_size_mm - half,
-                ))
-            else:
-                offsets = np.empty((0, 2))
+            offsets = np.column_stack((
+                (rec[:, 1] + 0.5) * screen_pixel_size_mm - screen_z_half,
+                (rec[:, 0] + 0.5) * screen_pixel_size_mm - half,
+            )) if len(rec) > 0 else np.empty((0, 2))
             screen_hit_sc.set_offsets(offsets)
             strip.set_data(hist)
             strip.set_clim(0, max(1.0, float(hist.max())))
@@ -723,8 +528,7 @@ def update(frame):
         ax_p.set_xlim(0, 1.05)
         strip.set_clim(0, 1)
         set_status("wave travelling to screen..." if sim.t_step < screen_arrival_step else "")
- 
- 
+
 activate()
 anim = FuncAnimation(fig, update, interval=15, cache_frame_data=False)
 plt.show()
