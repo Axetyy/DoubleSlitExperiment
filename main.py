@@ -16,6 +16,26 @@ from sampling.sampling3d import ParticleSampler3D
 from utils import wavelength_to_rgb, high_res_screen, runs
 from ui.ui import make_slider, quiet_set, retarget, radio_quiet
 
+try:
+    from physics.core import WaveSimulator as NumbaSim2D
+except Exception:
+    NumbaSim2D = None
+
+try:
+    from physics.core import TorchWaveSim2D, cuda_available
+except Exception:
+    TorchWaveSim2D = None
+    def cuda_available(): return False
+
+try:
+    from physics.core import CppWaveSim2D
+except Exception:
+    CppWaveSim2D = None
+
+try:
+    import physics.core as physics3d
+except Exception:
+    physics3d = None
 DIM = 2
 DEV = "CPU"
 p2 = Params()
@@ -137,26 +157,7 @@ b_reset = Button(fig.add_axes([0.10, 0.27, 0.07, 0.04]), "Reset")
 b_pause = Button(fig.add_axes([0.10, 0.20, 0.07, 0.04]), "Pause")
 
 # Backend import handling inside main
-try:
-    from physics.physics_numba import WaveSimulator as NumbaSim2D
-except Exception:
-    NumbaSim2D = None
 
-try:
-    from physics.physics_torch import TorchWaveSim2D, cuda_available
-except Exception:
-    TorchWaveSim2D = None
-    def cuda_available(): return False
-
-try:
-    from physics.physics_cpp import CppWaveSim2D
-except Exception:
-    CppWaveSim2D = None
-
-try:
-    import physics.physics3d as physics3d
-except Exception:
-    physics3d = None
 
 
 def configure_geometry():

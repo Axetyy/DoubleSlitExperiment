@@ -1,4 +1,4 @@
-# utils.py
+
 import numpy as np
 
 def wavelength_to_rgb(wavelength_nm):
@@ -53,6 +53,8 @@ def high_res_screen(intensity, oversampling=4):
     return np.interp(y_hi, y, intensity)
 
 def runs(mask):
+    if len(mask) == 0:
+        return []
     out, start = [], 0
     for i in range(1, len(mask) + 1):
         if i == len(mask) or mask[i] != mask[start]:

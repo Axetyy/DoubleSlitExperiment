@@ -5,16 +5,28 @@ This the repo for the assignment, I've written the formulas I implemented below 
 ### Code map
 
 - `main.py` - main UI
-- `physics_numba.py` - 2D CPU wave ( parallelized ) .
-- `physics_torch.py` - 2D PyTorch (CPU or CUDA GPU).
-- `physics3d.py` - 3D wave (Numba CPU or PyTorch CPU/CUDA).
+- `physics/core.py` - unified implementation for the Numba, PyTorch, and C++
+  2D/3D wave backends.
+- `physics/` module files - compatibility imports for existing backend paths.
 - `vistaengine.py` - 3D UI.
 - `sampling.py` and `sampling3d.py` - particle/detection sampling.
 - `reference.py` - Fraunhofer reference patterns for compariso.
 - `config.py` - simulation parameters.
 
-The physics modules are alternative backends or dimensions used by the same
-simulation UI, not separate simulations to launch individually. 
+The physics backends are alternative engines or dimensions used by the same
+simulation UI, not separate simulations to launch individually. Import them
+from `physics` for the unified API; existing backend-specific imports remain
+supported.
+
+### Tests
+
+Run the physics and core-helper tests with `python tests.py`. To measure line
+coverage for those modules, install `coverage` and run:
+
+```text
+python -m coverage run tests.py
+python -m coverage report --include="physics/core.py,config.py,reference.py,sampling/sampling.py,sampling/sampling3d.py,utils.py"
+```
 
 ## Tech stack
 
@@ -259,4 +271,3 @@ where
 $$
 r(y')=\sqrt{L_s^2+(y'-y_s)^2}.
 $$
-
