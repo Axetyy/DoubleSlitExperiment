@@ -1,4 +1,3 @@
-"""PyVista/VTK GPU renderer for the CUDA-aware 3D double-slit simulation."""
 import argparse
 import sys
 
@@ -8,7 +7,7 @@ import torch
 import vtk
 
 from config import params_3d
-from physics.physics3d import TorchWaveSim3D
+from physics.core import TorchWaveSim3D
 from reference import fraunhofer3d
 from sampling.sampling3d import ParticleSampler3D
 
