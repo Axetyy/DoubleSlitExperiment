@@ -6,11 +6,11 @@ A computational exploration of the classical wave equation, implemented using mu
 
 <!-- Replace these paths with your actual screenshots -->
 <p align="center">
-  <img src="assets/screenshots/simulation-2d.png" width="80%" alt="2D double slit wave simulation">
+  <img src="assets/simulation-2d.png" width="80%" alt="2D double slit wave simulation">
 </p>
 
 <p align="center">
-  <img src="assets/screenshots/simulation-3d.png" width="80%" alt="3D double slit wave simulation">
+  <img src="assets/simulation-3d.png" width="80%" alt="3D double slit wave simulation">
 </p>
 ---
 
@@ -114,10 +114,9 @@ The simulation is based on classical scalar wave propagation. The following sect
 
 The source generates a harmonic wave described by:
 
-$$
+```math
 u_s(t)=A(t)\sin(\omega t+\phi_0)
-$$
-
+```
 where:
 
 - $A(t)$ is the source amplitude.
@@ -126,37 +125,34 @@ where:
 
 Angular frequency and wavenumber are related to the wavelength by:
 
-$$
+```math
 k=\frac{2\pi}{\lambda},
 \qquad
 \omega=ck
-$$
-
+```
 where $c$ is the wave propagation speed.
 
 ## 2. Wave Propagation
 
 The simulation solves the scalar wave equation:
 
-$$
+```math
 \boxed{
 \frac{\partial^2u}{\partial t^2}
 =
 c^2\nabla^2u+S(x,y,t)
 }
-$$
-
+```
 Here, $u$ represents the scalar wave field and $S$ represents the source term.
 
 For two spatial dimensions, the Laplacian is:
 
-$$
+```math
 \nabla^2u=
 \frac{\partial^2u}{\partial x^2}
 +
 \frac{\partial^2u}{\partial y^2}
-$$
-
+```
 This is a classical wave equation, not a probabilistic wavefunction evolution equation.
 
 ## 3. Numerical Discretization
@@ -165,18 +161,17 @@ To solve the equation computationally, the continuous spatial domain is represen
 
 Using a square grid with spacing $\Delta$, the discrete Laplacian becomes:
 
-$$
+```math
 L_{i,j}^{n}=
 u_{i+1,j}^{n}+u_{i-1,j}^{n}
 +u_{i,j+1}^{n}+u_{i,j-1}^{n}
 -4u_{i,j}^{n}
-$$
-
+```
 This is the five-point discrete Laplacian stencil.
 
-The corresponding explicit time-stepping scheme is:
+The corresponding explicit time-stepping scheme is
 
-$$
+```math
 \boxed{
 u_{i,j}^{n+1}
 =
@@ -184,49 +179,40 @@ u_{i,j}^{n+1}
 -u_{i,j}^{n-1}
 +C^2L_{i,j}^{n}
 }
-$$
-
+```
 where the Courant number is:
 
-$$
+```math
 C=\frac{c\Delta t}{\Delta}
-$$
-
+```
 For the standard two-dimensional scheme on a square grid, the stability condition is:
 
-$$
+```math
 C\leq\frac{1}{\sqrt{2}}
-$$
-
+```
 The stability restriction is important because choosing a time step that is too large can introduce numerical instabilities.
 
 [Further reading: Courant–Friedrichs–Lewy condition](https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition)
 
 ## 4. Absorbing Boundaries
 
-A finite computational grid introduces an artificial problem: waves reaching the edges can reflect back into the simulation.
 
-To reduce these unwanted reflections, a damping layer is introduced near the boundaries.
+A finite computational grid introduces an artificial problem: waves reaching the edges can reflect back into the simulation. 
 
-The modified wave equation is:
+To reduce these unwanted reflections, a damping layer is introduced near the boundaries. 
 
-$$
-\boxed{
-\frac{\partial^2u}{\partial t^2}
-+
-\gamma(x,y)\frac{\partial u}{\partial t}
-=
-c^2\nabla^2u+S(x,y,t)
-}
-$$
+The modified wave equation is: 
 
+```math
+\boxed{\frac{\partial^2u}{\partial t^2}+\gamma(x,y)\frac{\partial u}{\partial t}=c^2\nabla^2u+S(x,y,t)}
+```
 The damping coefficient $\gamma(x,y)$ is small in the central region and increases towards the boundaries.
 
 This acts as a numerical sponge, reducing the amplitude of outgoing waves before they reach the grid edges.
 
 Using central finite differences for the temporal derivatives, the discrete update becomes:
 
-$$
+```math
 \begin{aligned}
 u_{i,j}^{n+1}={}&
 \frac{2u_{i,j}^{n}+C^2L_{i,j}^{n}
@@ -237,22 +223,20 @@ u_{i,j}^{n+1}={}&
 {1+\gamma_{i,j}\Delta t/2}
 u_{i,j}^{n-1}
 \end{aligned}
-$$
-
+```
 The source term is included here when it is incorporated directly into this update.
 
 ## 5. The Double-Slit Geometry
 
 The double-slit barrier is represented by a spatial mask:
 
-$$
+```math
 M(x,y)=
 \begin{cases}
 1,&\text{in free space and inside the slits}\\
 0,&\text{inside the opaque barrier}
 \end{cases}
-$$
-
+```
 The mask determines where the wave is allowed to propagate.
 
 The slits are not treated as independent artificial sources. Their outgoing waves emerge naturally from the numerical propagation of the incident field through the openings.
@@ -263,102 +247,90 @@ In other words, the wall is simply a region where the wave cannot propagate forw
 
 Because the scalar wave equation is linear, the total field can be expressed as the sum of the contributions from both slits:
 
-$$
+```math
 u(x,y,t)=u_1(x,y,t)+u_2(x,y,t)
-$$
-
+```
 For two harmonic waves with equal amplitude $A$ and phase difference $\Delta\phi$, their sum is:
 
-$$
+```math
 u=
 2A\cos\left(\frac{\Delta\phi}{2}\right)
 \cos\left(
 \omega t+\frac{\phi_1+\phi_2}{2}
 \right)
-$$
-
+```
 The resulting amplitude depends on the phase difference.
 
 **Constructive interference:**
 
-$$
+```math
 \Delta\phi=2m\pi
-$$
-
+```
 **Destructive interference:**
 
-$$
+```math
 \Delta\phi=(2m+1)\pi
-$$
-
+```
 For two slits separated by distance $d$, the far-field path difference is approximately:
 
-$$
+```math
 \Delta r=d\sin\theta
-$$
-
+```
 The corresponding phase difference is:
 
-$$
+```math
 \boxed{
 \Delta\phi=
 \frac{2\pi d\sin\theta}{\lambda}
 }
-$$
-
+```
 The approximate bright-fringe condition is:
 
-$$
+```math
 d\sin\theta=m\lambda
-$$
-
+```
 while the dark-fringe condition is:
 
-$$
+```math
 d\sin\theta=
 \left(m+\frac12\right)\lambda
-$$
-
+```
 where $m$ is an integer.
 
 ## 7. Intensity and Detection
 
 The detector measures a quantity proportional to the time-averaged squared wave field:
 
-$$
+```math
 \boxed{
 I(x,y)\propto
 \left\langle u(x,y,t)^2\right\rangle_t
 }
-$$
-
+```
 For two contributions:
 
-$$
+```math
 \begin{aligned}
 I&\propto\left\langle(u_1+u_2)^2\right\rangle\\
 &=\langle u_1^2\rangle+\langle u_2^2\rangle
 +2\langle u_1u_2\rangle
 \end{aligned}
-$$
-
+```
 The cross term,
 
-$$
+```math
 2\langle u_1u_2\rangle
-$$
-
+```
 is responsible for the interference pattern.
 
 The simulation estimates the intensity using an exponential running average:
 
-$$
+```math
 I_i^{n+1}
 =
 I_i^n+
 \frac{\overline{u_i^2}^{\,n+1}-I_i^n}{N}
-$$
-
+```
 where $N$ controls the averaging rate.
 
 A larger $N$ results in slower updates and stronger temporal smoothing.
@@ -371,23 +343,20 @@ Real sources are not necessarily perfectly coherent. Their phase can fluctuate o
 
 To model this, the simulation introduces a stochastic phase:
 
-$$
+```math
 \phi_n=
 \omega\Delta t\,n+\phi_0+\eta_n
-$$
-
+```
 where the phase fluctuation follows a random walk:
 
-$$
+```math
 \eta_n=\eta_{n-1}+\sigma\xi_n
-$$
-
+```
 with:
 
-$$
+```math
 \xi_n\sim\mathcal{N}(0,1)
-$$
-
+```
 Here, $\sigma$ controls the magnitude of the phase fluctuations.
 
 These fluctuations model phase diffusion: the source gradually loses phase stability, which can reduce interference contrast.
@@ -398,35 +367,31 @@ The numerical simulation can be compared against an analytical far-field referen
 
 In the far-field regime, the complex field at observation angle $\theta$ is proportional to the Fourier transform of the field across the aperture:
 
-$$
+```math
 \boxed{
 U(\theta)\propto
 \int_{\mathrm{aperture}}
 U_{\mathrm{ap}}(y')
 e^{-iky'\sin\theta}\,dy'
 }
-$$
-
+```
 The corresponding intensity is:
 
-$$
+```math
 I(\theta)\propto|U(\theta)|^2
-$$
-
+```
 For a point source at a finite distance, the incident aperture field can be approximated by:
 
-$$
+```math
 U_{\mathrm{ap}}(y')=
 \frac{e^{ikr(y')}}{\sqrt{r(y')}}
-$$
-
+```
 where:
 
-$$
+```math
 r(y')=
 \sqrt{L_s^2+(y'-y_s)^2}
-$$
-
+```
 This amplitude scaling corresponds to a two-dimensional cylindrical-wave model.
 
 The analytical reference provides a useful way to compare the numerical interference pattern against the expected far-field behaviour.
