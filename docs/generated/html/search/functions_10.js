@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['sample_0',['sample',['../classsampling_1_1_particle_sampler.html#a01288dc406b66ca610da0e1360b39309',1,'sampling.ParticleSampler.sample()'],['../classsampling3d_1_1_particle_sampler3_d.html#a31fa6861ff62e67666d566816d936cf5',1,'sampling3d.ParticleSampler3D.sample()']]],
+  ['say_1',['say',['../namespacemain.html#a1369525f700708c7be154a7e0288affc',1,'main']]],
+  ['set_5f3d_5flimits_2',['set_3d_limits',['../namespacemain.html#aa58e2c5eeefcf606969a1e20b076da5f',1,'main']]],
+  ['set_5flayout_3',['set_layout',['../namespacemain.html#a49d635c4772b4beb24d240ae54972b6e',1,'main']]],
+  ['set_5fstatus_4',['set_status',['../namespacemain.html#a59da8999e865b854120b5fa619d04680',1,'main']]],
+  ['settled_5',['settled',['../class_wave_simulator.html#acca37314c5c2d0d7e73680ab61e9e3f7',1,'WaveSimulator']]],
+  ['settleremaining_6',['settleRemaining',['../class_wave_simulator.html#a6e9b78454078d1070a35895a8ef77e36',1,'WaveSimulator']]],
+  ['shape_7',['shape',['../class_tensor2_d.html#a96ea56c2ed631dea90b13569385083f5',1,'Tensor2D']]],
+  ['sim_5fbuild_8',['sim_build',['../physics__capi_8cpp.html#af77766830c686c2ddd2432835decf6df',1,'physics_capi.cpp']]],
+  ['sim_5fcopy_5fdetector_9',['sim_copy_detector',['../physics__capi_8cpp.html#ad0a9364a9bdb85e22f38508c349cf55b',1,'physics_capi.cpp']]],
+  ['sim_5fcopy_5ffield_10',['sim_copy_field',['../physics__capi_8cpp.html#ac851ad03d7c5dbe48e487983f3d97510',1,'physics_capi.cpp']]],
+  ['sim_5fcopy_5fslit_5fopen_11',['sim_copy_slit_open',['../physics__capi_8cpp.html#a51302dd79fa3a74e737993571f5b0443',1,'physics_capi.cpp']]],
+  ['sim_5fcreate_12',['sim_create',['../physics__capi_8cpp.html#a4a0814119ba3934a77dedbf593ecdd6d',1,'physics_capi.cpp']]],
+  ['sim_5fdestroy_13',['sim_destroy',['../physics__capi_8cpp.html#af913a7c28ca6d85798d964d1b4608bf9',1,'physics_capi.cpp']]],
+  ['sim_5flast_5ferror_14',['sim_last_error',['../physics__capi_8cpp.html#a292aeecaac27c7ef329d6bde28e98c55',1,'physics_capi.cpp']]],
+  ['sim_5freset_15',['sim_reset',['../physics__capi_8cpp.html#ae859830b4085b673eb16cf72e9cd000c',1,'physics_capi.cpp']]],
+  ['sim_5fset_5fparam_16',['sim_set_param',['../physics__capi_8cpp.html#adc0cdaa149f26a957cc6a26684f6ba0c',1,'physics_capi.cpp']]],
+  ['sim_5fsrc_5fy_17',['sim_src_y',['../physics__capi_8cpp.html#ae90b4821fb3010e70c66b317ba2f1905',1,'physics_capi.cpp']]],
+  ['sim_5fstep_5fn_18',['sim_step_n',['../physics__capi_8cpp.html#a18ac65dd7e87b082a90ced6c2e85a66a',1,'physics_capi.cpp']]],
+  ['sim_5ft_5fstep_19',['sim_t_step',['../physics__capi_8cpp.html#ab2326313637bb4a17614b1021d38c979',1,'physics_capi.cpp']]],
+  ['slitopen_20',['slitOpen',['../class_wave_simulator.html#ad581487baba6b6cef733a34aaa14abae',1,'WaveSimulator']]],
+  ['srcy_21',['srcY',['../class_wave_simulator.html#a0260da66e643aca5c4aed69d2e61b660',1,'WaveSimulator']]],
+  ['step_22',['step',['../class_wave_simulator.html#a7285451ac00607d7c0fa58b045fb9dd6',1,'WaveSimulator::step()'],['../classphysics_1_1core_1_1_wave_simulator.html#a85018b581a81895224be902f86a2da79',1,'physics.core.WaveSimulator.step()'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a84319b0cd9c6ccdb7a9743acc24b1194',1,'physics.core.TorchWaveSim2D.step()'],['../classphysics_1_1core_1_1___base3d.html#a1de2079ffca8a9206151eeff90437182',1,'physics.core._Base3d.step()'],['../classphysics_1_1core_1_1_cpp_wave_sim2_d.html#a6909f308ee9f1cecb86741cf21a3a1f4',1,'physics.core.CppWaveSim2D.step()']]],
+  ['step_5fn_23',['step_n',['../class_wave_simulator.html#ae0e68365b6715fb6604600179c5d2aa0',1,'WaveSimulator::step_n()'],['../classphysics_1_1core_1_1_wave_simulator.html#af29df876e3fcf95e9db464d44245a570',1,'physics.core.WaveSimulator.step_n()'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a6fb829ecc3af0f4271f9a10e25f80298',1,'physics.core.TorchWaveSim2D.step_n()'],['../classphysics_1_1core_1_1___base3d.html#a4c7e3a1d7bf581a0a6ba0b40b46b67a0',1,'physics.core._Base3d.step_n()'],['../classphysics_1_1core_1_1_cpp_wave_sim2_d.html#a201703b013abd3394f346a79bcc67b84',1,'physics.core.CppWaveSim2D.step_n()']]],
+  ['swap_24',['swap',['../class_tensor2_d.html#a0ac9db9cdef42ccdcd25591bc38e8ef2',1,'Tensor2D']]]
+];

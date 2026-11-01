@@ -1,0 +1,22 @@
+var searchData=
+[
+  ['p_0',['p',['../classphysics_1_1core_1_1_wave_simulator.html#ae4e3f9ebd6c95a8d55f5bbd32bb430ad',1,'physics.core.WaveSimulator.p'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#ae0a965df3557098c5e9a22a1b9b769d0',1,'physics.core.TorchWaveSim2D.p'],['../classphysics_1_1core_1_1___base3d.html#ad7a4b59810c9f8776a41fed6ebb7c512',1,'physics.core._Base3d.p'],['../classphysics_1_1core_1_1_cpp_wave_sim2_d.html#a10bb0028092af4bdb9dc3203368af246',1,'physics.core.CppWaveSim2D.p'],['../namespacemain.html#a58d6f2b2adcf676c2b3841e399cfdb08',1,'main.p'],['../namespacevistaengine.html#ae3324278d8f76d06b69d19ba679a20e0',1,'vistaengine.p']]],
+  ['p2_1',['p2',['../namespacemain.html#a81c58e382d063f6e547b9710c249654a',1,'main']]],
+  ['p3_2',['p3',['../namespacemain.html#a18c2c8c05c0cc00e89f0c72c786f6748',1,'main']]],
+  ['parallel_3',['PARALLEL',['../namespacephysics_1_1core.html#a95fbe884956e7935aa8292216d9d42b7',1,'physics::core']]],
+  ['parameter_5fsliders_4',['parameter_sliders',['../namespacevistaengine.html#ae1cb01309c77730da22cdf1f75271043',1,'vistaengine']]],
+  ['particle_5fmode_5',['particle_mode',['../classconfig_1_1_params.html#a34ba34ba54b9a85791f57e53365a0624',1,'config.Params.particle_mode'],['../struct_params.html#a2321e9e80cfedfd4f3ce68da2451b3e6',1,'Params::particle_mode']]],
+  ['phase_5fnoise_6',['phase_noise',['../classphysics_1_1core_1_1_wave_simulator.html#a4902a2f3fde41429e74d76b57fc7df11',1,'physics.core.WaveSimulator.phase_noise'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a70bffe0e8e47daa5135e382ac81b10f3',1,'physics.core.TorchWaveSim2D.phase_noise'],['../classphysics_1_1core_1_1___base3d.html#afe9db956c3220a178bcce060364d664a',1,'physics.core._Base3d.phase_noise']]],
+  ['phase_5foffset_7',['phase_offset',['../classphysics_1_1core_1_1_wave_simulator.html#a868cd2889f50f3990f465bb58b1bfac8',1,'physics.core.WaveSimulator.phase_offset'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a1ed430a3d4b7d56059f967770c2d9178',1,'physics.core.TorchWaveSim2D.phase_offset'],['../classphysics_1_1core_1_1___base3d.html#ad1c317fea32351bcc275529e266b3fb2',1,'physics.core._Base3d.phase_offset']]],
+  ['physics3d_8',['physics3d',['../namespacemain.html#a3ba9842b33dbc9d58d4642830c1a7bab',1,'main']]],
+  ['pixel_5fpoints_9',['pixel_points',['../namespacevistaengine.html#a0945b56fe3905dd1307290c5dceafa83',1,'vistaengine']]],
+  ['pixel_5fy_10',['pixel_y',['../namespacevistaengine.html#a46c8c00a4f576b44045e87b3b3485408',1,'vistaengine']]],
+  ['pixel_5fz_11',['pixel_z',['../namespacevistaengine.html#ac30c96cde63d6c02f4dbcd98467a3d57',1,'vistaengine']]],
+  ['plotter_12',['plotter',['../namespacevistaengine.html#a30aa8884ac63448fc4250a13d1a7212b',1,'vistaengine']]],
+  ['pos2_13',['POS2',['../namespacemain.html#ada9c153708d8af245c65be1452de8376',1,'main']]],
+  ['position_14',['position',['../namespacevistaengine.html#abc5ed6ef68530780770015a8f301be53',1,'vistaengine']]],
+  ['positive_5factor_15',['positive_actor',['../namespacevistaengine.html#a1c374a7a9a72369f5e77982d2825b9bf',1,'vistaengine']]],
+  ['positive_5fcontour_16',['positive_contour',['../namespacevistaengine.html#a0fdc7203dda12080503422ef8f693f3b',1,'vistaengine']]],
+  ['prange_17',['prange',['../namespacephysics_1_1core.html#ae6b855d9ea94b613e574a00483683f51',1,'physics::core']]],
+  ['profile_5fchart_18',['profile_chart',['../namespacevistaengine.html#a40c407e38b93279216d17923cf15302f',1,'vistaengine']]]
+];

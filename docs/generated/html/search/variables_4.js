@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['d_5f_0',['d_',['../class_tensor2_d.html#a48da523da16671ce334d8e75a81dc638',1,'Tensor2D']]],
+  ['damping_1',['damping',['../classphysics_1_1core_1_1_wave_simulator.html#a6859886345f2a35e66365a37ac79eb79',1,'physics.core.WaveSimulator.damping'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#ae900bbc71d381d50460e4f4207621739',1,'physics.core.TorchWaveSim2D.damping']]],
+  ['damping_5fnext_2',['damping_next',['../classphysics_1_1core_1_1_wave_simulator.html#a9bcca35c3be02a52dfa254ab9ebcf582',1,'physics.core.WaveSimulator.damping_next'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a021082068c9c90b4aa84b7cd5b6ca915',1,'physics.core.TorchWaveSim2D.damping_next']]],
+  ['damping_5fprev_3',['damping_prev',['../classphysics_1_1core_1_1_wave_simulator.html#a8920dc07158f8d789b95801a80c9dda4',1,'physics.core.WaveSimulator.damping_prev'],['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a32738eefe1a57371be572d7ac1f34da7',1,'physics.core.TorchWaveSim2D.damping_prev']]],
+  ['detector_4',['detector',['../namespacevistaengine.html#a80e6c186cfcfab64eac4f93b3ae930a4',1,'vistaengine']]],
+  ['detector_5factor_5',['detector_actor',['../namespacevistaengine.html#ae7231d19ad814d8ba676c5c6e5f15e3a',1,'vistaengine']]],
+  ['detector_5fline_6',['detector_line',['../namespacemain.html#a5852a13dcd504c15206f6d72640da7c9',1,'main']]],
+  ['detector_5foversampling_7',['detector_oversampling',['../classconfig_1_1_params.html#af90a3a221866933f6724cd8e8a37094d',1,'config.Params.detector_oversampling'],['../struct_params.html#af609e2c917885e2bb2233954f63cf202',1,'Params::detector_oversampling']]],
+  ['detector_5fwidth_8',['detector_width',['../classconfig_1_1_params.html#ae318839b2edd119265bc741930c93125',1,'config.Params.detector_width'],['../struct_params.html#a03d84577056b0a726b3d4d976fd42e5b',1,'Params::detector_width']]],
+  ['dev_9',['DEV',['../namespacemain.html#ae38beb284f2931d2698e5e1e78659efe',1,'main']]],
+  ['device_10',['device',['../classphysics_1_1core_1_1_torch_wave_sim2_d.html#a266ec48467314232c9272e4da313987b',1,'physics.core.TorchWaveSim2D.device'],['../classphysics_1_1core_1_1_torch_wave_sim3_d.html#abd6d565d9c2c8c9ec48dc142978eb0ac',1,'physics.core.TorchWaveSim3D.device'],['../namespacevistaengine.html#ae1efdeb8c8038ecd63e2e0d49a6ea87a',1,'vistaengine.device']]],
+  ['dim_11',['DIM',['../namespacemain.html#acacb982acc855ed67c100918e94a8af1',1,'main']]],
+  ['dnext_12',['dnext',['../classphysics_1_1core_1_1___base3d.html#ae4b8cb12888516249cfdb1932ce5e9a5',1,'physics::core::_Base3d']]],
+  ['dprev_13',['dprev',['../classphysics_1_1core_1_1___base3d.html#add537e088b5abc8587df8254f44ff24c',1,'physics::core::_Base3d']]],
+  ['draw_5fevery_14',['DRAW_EVERY',['../namespacevistaengine.html#a9282a9c80b55cfbef22b1a00a774fc95',1,'vistaengine']]],
+  ['drawstyle_15',['drawstyle',['../namespacemain.html#a07f368a51cff38c3ceb49d36abd0ce45',1,'main']]],
+  ['dtype_16',['dtype',['../namespacevistaengine.html#a4768677adfd8f0f7c6096e63ebc0d370',1,'vistaengine']]]
+];
