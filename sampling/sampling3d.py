@@ -3,8 +3,7 @@ import numpy as np
 
 class ParticleSampler3D:
     """
-    Born rule: the probability of a hit in a pixel is proportional to the
-    intensity of the wave in that pixel.
+    Monte Carlo sampler for particle detection events in a 3D simulation based on a given intensity distribution.
     """
 
     def __init__(self, ny, nz, x_detector, max_recent=5000):
@@ -15,10 +14,14 @@ class ParticleSampler3D:
         self.reset()
 
     def reset(self):
+        """
+        Resets the sampler's internal state, clearing the histogram and recent samples."""
         self.hist = np.zeros((self.ny, self.nz))
         self.recent = np.empty((0, 2))
 
     def sample(self, intensity, k):
+        """
+        Samples particle detection events based on the given intensity distribution."""
         k = self.rng.poisson(k)
         if k == 0:
             return

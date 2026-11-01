@@ -5,7 +5,7 @@
 #include <random>
 #include <string>
 #include <vector>
-
+/// @brief A 2D tensor (matrix) of floats with basic arithmetic operations and utility functions.
 class Tensor2D
 {
 public:
@@ -46,6 +46,8 @@ public:
     Tensor2D matmul(const Tensor2D &other) const; // O(n^3)
 
     void laplacianInto(Tensor2D &out) const;
+    /// @brief Compute the Laplacian of this tensor.
+    /// @return The resulting tensor.
     Tensor2D laplacian() const
     {
         Tensor2D out(rows_, cols_);
@@ -56,7 +58,9 @@ public:
     void rowMeanSq(int x0, int x1, std::vector<float> &out) const;
     std::vector<float> flatten() const;
 
-private:
+    /// @brief Check if this tensor has the same shape as another tensor.
+    /// @param o The other tensor to compare with.
+    /// @param what A string describing the operation being performed.
     void requireSameShape(const Tensor2D &o, const char *what) const
     {
         if (rows_ != o.rows_ || cols_ != o.cols_)
@@ -66,6 +70,10 @@ private:
         cols_ = 0;
     std::vector<std::vector<float>> d_;
 };
+
+/*
+Operations between tensors and scalars, returning new tensors. These are defined as free functions to allow for implicit conversions and to avoid modifying the original tensors.
+*/
 
 inline Tensor2D operator+(Tensor2D a, const Tensor2D &b)
 {
@@ -92,7 +100,7 @@ inline Tensor2D operator*(float s, Tensor2D a)
     a *= s;
     return a;
 }
-
+/// @brief Same params as in physics/core.py, but for the C++ backend.
 struct Params
 {
     int x_src = 60;
@@ -137,6 +145,8 @@ struct Params
     float slit_height = 0.0f;
 };
 
+/// @brief A 2D wave simulator for the double-slit experiment, using finite difference time domain (FDTD) methods.
+/// @details This class is the C++ backend implementation of the wave simulator in physics/core.py.
 class WaveSimulator
 {
 public:

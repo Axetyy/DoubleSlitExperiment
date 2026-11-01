@@ -1,7 +1,17 @@
+from config import Params
 import numpy as np
 
 
-def _numerical_wavenumber(p, angle):
+def _numerical_wavenumber(p: Params, angle:float)->np.ndarray:
+    """
+    Lattice wavenumber along a direction with angle ( radians ) from the x-asis. Solves sin^2(w dt/2)/C^2 = sin^2(k cos(angle)/2) + sin^2(k sin(angle)/2).
+    
+    :param p: simulation parameters
+    :param angle: angle from the x-axis in radians
+    :return: numerical wavenumber
+    
+    """
+    
     omega_dt = 2 * np.pi * p.courant / p.wavelength
     target = np.sin(omega_dt / 2) ** 2 / p.courant ** 2
     angle = np.asarray(angle, dtype=float)
@@ -21,7 +31,18 @@ def _numerical_wavenumber(p, angle):
     return (low + high) / 2
 
 
-def fraunhofer(p, detector_rows, slit_open, source_row):
+def fraunhofer(p: Params, detector_rows:np.ndarray, slit_open:np.ndarray, source_row:float)->np.ndarray:
+    """
+    Calculates the fraunhofer diffraction pattern for a set of given parameters
+    
+    :param p: simulation parameters
+    :param detector_rows: rows of the detector
+    :param slit_open: boolean array indicating which rows of the slit are open
+    :param source_row: row of the source
+    
+    :return: normalized intensity along the detector rows
+    """
+    
     center = p.ny / 2
     detector_y = np.asarray(detector_rows, dtype=float) - center
 
@@ -49,12 +70,17 @@ def fraunhofer(p, detector_rows, slit_open, source_row):
     return intensity / peak if peak > 0 else intensity
 
 
-
-
-def _numerical_wavenumber_3d(p, cx, cy, cz):
+def _numerical_wavenumber_3d(p:Params, cx:np.ndarray, cy:np.ndarray, cz:np.ndarray)->np.ndarray:
     """Lattice wavenumber along a direction with cosines (cx, cy, cz).
 
     Solves  sin^2(w dt/2)/C^2 = sin^2(k cx/2) + sin^2(k cy/2) + sin^2(k cz/2).
+    
+    :param p: simulation parameters
+    :param cx : cosine of the angle in the x-direction
+    :param cy : cosine of the angle in the y-direction
+    :param cz : cosine of the angle in the z-direction
+    
+    :return: numerical wavenumber
     """
     omega_dt = 2 * np.pi * p.courant / p.wavelength
     target = np.sin(omega_dt / 2) ** 2 / p.courant ** 2
@@ -79,9 +105,20 @@ def _numerical_wavenumber_3d(p, cx, cy, cz):
  
  
 def fraunhofer3d(
-    p, detector_rows, slit_open_y, slit_open_z, source_y, source_z, aperture_mask=None
+    p:Params, detector_rows:np.ndarray, slit_open_y:np.ndarray, slit_open_z:np.ndarray, source_y:float, source_z:float, aperture_mask=None
 ):
-    """Normalised intensity along y on the screen, at z = centre of the screen."""
+    """
+        Calculates the fraunhofer diffraction pattern for a set of given parameters in 3D.
+        
+        :param p: simulation parameters
+        :param detector_rows: rows of the detector
+        :param slit_open_y: boolean array indicating which rows of the slit are open in the y-direction
+        :param slit_open_z: boolean array indicating which rows of the slit are open in the z-direction
+        :param source_y: y-coordinate of the source
+        :param source_z: z-coordinate of the source
+        
+        :return: normalized intensity along the detector rows
+        """
     cy0, cz0 = p.ny / 2, p.nz / 2
     det_y = np.asarray(detector_rows, dtype=float) - cy0
  

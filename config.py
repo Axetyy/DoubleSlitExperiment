@@ -1,16 +1,21 @@
+"""
+Configuration parameters for the simulation.
+"""
+
+
 from dataclasses import dataclass
 import numpy as np
 
 
 @dataclass
 class Params:
-    x_src: int = 60
-    x_wall: int = 150
-    x_det: int = 480
+    x_src: int = 60 # how far from the left edge of the simulation domain the source is located
+    x_wall: int = 150 # how far from the left edge of the simulation domain the wall is located
+    x_det: int = 480 # how far from the left edge of the simulation domain the detector is located
     
-    nx: int = 1000
-    ny: int = 600
-    view_ny: int = 400
+    nx: int = 1000 # number of cells in the x-direction
+    ny: int = 600 # number of cells in the y-direction
+    view_ny: int = 400 # number of cells to display in the y-direction
 
     wall_thickness: int = 4
     sponge: int = 40
@@ -48,6 +53,10 @@ class Params:
     slit_height:float = 0.0
     
 def params_3d()->Params:
+    """
+    Parameters for a 3D simulation. They are similar to the 2D parameters, but with a few differences. The main difference is that the slit height is specified in micrometers, and the slit height in cells is calculated from that. The other difference is that the number of cells in the z-direction is specified, and the slit shape is set to "rectangular". The slit width and spacing are also specified in micrometers, and converted to cells using the um_to_cells parameter.
+    """
+    
     p = Params(
         x_src=30,
         x_wall=75,

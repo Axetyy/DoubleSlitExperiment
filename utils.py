@@ -2,6 +2,13 @@
 import numpy as np
 
 def wavelength_to_rgb(wavelength_nm):
+    """
+    Converts a wavelength in nanometers to an approximate RGB color
+    
+    :param wavelength_nm: wavelength in nanometers
+    :return: RGB color as a numpy array
+    
+    """
     w = np.asarray(wavelength_nm, dtype=float)
     r = np.zeros_like(w)
     g = np.zeros_like(w)
@@ -47,12 +54,25 @@ def wavelength_to_rgb(wavelength_nm):
     return np.stack([r * factor, g * factor, b * factor], axis=-1)
 
 def high_res_screen(intensity, oversampling=4):
+    """
+    Upsamples the intensity array to a higher resolution using linear interpolation.
+    
+    :param intensity: the intensity array to upsample
+    :param oversampling: the factor by which to oversample
+    :return: the upsampled intensity array
+    """
     ny = len(intensity)
     y = np.arange(ny)
     y_hi = (np.arange(ny * oversampling) + 0.5) / oversampling - 0.5
     return np.interp(y_hi, y, intensity)
 
 def runs(mask):
+    """
+    Returns a list of (start, end, value) tuples for each run of consecutive values in the mask.
+    
+    :param mask: a boolean array
+    :return: a list of (start, end, value) tuples
+    """
     if len(mask) == 0:
         return []
     out, start = [], 0

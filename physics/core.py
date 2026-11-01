@@ -40,12 +40,28 @@ except Exception:
 
 
 @njit(parallel=PARALLEL, cache=False)
-def _one_step(u, up, un, c_next, c_prev, C2, sy, sx, sv, x0, x1, I_det, avg):
+def _one_step(u:np.ndarray, up:np.ndarray, un:np.ndarray, c_next:np.ndarray, c_prev:np.ndarray, C2:np.float32, sy:int, sx:int, sv:np.float32, x0:int, x1:int, I_det:np.ndarray, avg:np.float32):
     """One leapfrog step, fused.
 
     un = mask * ( dn * (2u + C2*lap(u)) - dn*dp * up + source )
     with c_next = dn*mask and c_prev = dn*dp*mask precomputed.
     Border cells have lap == 0
+    
+    :param u: current field
+    :param up: previous field
+    :param un: next field (output)
+    :param c_next: precomputed damping * mask for next field
+    :param c_prev: precomputed damping * damping_prev * mask for previous field
+    :param C2: courant^2
+    :param sy: y-coordinate of the source
+    :param sx: x-coordinate of the source
+    :param sv: source value to inject
+    :param x0: left edge of the detector
+    :param x1: right edge of the detector
+    :param I_det: detector intensity accumulator (output)
+    :param avg: number of steps to average over for the detector
+    
+    :return None: modifies un and I_det in place
     """
     ny, nx = u.shape
     two = np.float32(2.0)
@@ -81,7 +97,7 @@ def _one_step(u, up, un, c_next, c_prev, C2, sy, sx, sv, x0, x1, I_det, avg):
 
 
 @njit(cache=False)
-def _run_steps(u, up, un, c_next, c_prev, C2, sy, sx, sv_arr, x0, x1, I_det, avg):
+def _run_steps(u:np.ndarray, up:np.ndarray, un:np.ndarray, c_next:np.ndarray, c_prev:np.ndarray, C2:np.float32, sy:int, sx:int, sv_arr:np.ndarray, x0:int, x1:int, I_det:np.ndarray, avg:np.float32):
     """Run len(sv_arr) steps, rotating the three buffers. Returns (u, u_prev, u_next)."""
     for k in range(sv_arr.shape[0]):
         _one_step(u, up, un, c_next, c_prev, C2, sy, sx, sv_arr[k], x0, x1, I_det, avg)
@@ -135,6 +151,7 @@ class WaveSimulator:
         self.rebuild(fresh=True)
 
     def _build_absorber(self):
+        """Builds a damping profile for the sponge boundary conditions."""
         p = self.p
 
         x = np.arange(p.nx)
@@ -146,6 +163,9 @@ class WaveSimulator:
         return (0.6 * edge_depth ** 2).astype(np.float32)
 
     def rebuild(self, fresh=False):
+        """
+        Rebuilds the simulation state, including the wall mask and source position. If fresh is True, the simulation is reset to its initial state.
+        """
         p = self.p
         yc = p.ny / 2
         y = np.arange(p.ny)
@@ -197,6 +217,7 @@ class WaveSimulator:
             self.settle += int((p.x_wall - p.x_src) / p.courant)
 
     def reset(self):
+        """Resets the simulation to its initial state."""
         self.u.fill(0)
         self.u_prev.fill(0)
         self.u_next.fill(0)
@@ -290,6 +311,7 @@ class TorchWaveSim2D:
         self.rebuild(fresh=True)
 
     def _build_absorber(self):
+        """Builds a damping profile for the sponge boundary conditions."""
         p = self.p
         x = np.arange(p.nx)
         y = np.arange(p.ny)
@@ -299,6 +321,7 @@ class TorchWaveSim2D:
         return (0.6 * edge_depth ** 2).astype(np.float32)
 
     def rebuild(self, fresh=False):
+        """Rebuilds the simulation state, including the wall mask and source position. If fresh is True, the simulation is reset to its initial state."""
         p = self.p
         yc = p.ny / 2
         y = np.arange(p.ny)
@@ -337,6 +360,7 @@ class TorchWaveSim2D:
             self.settle += int((p.x_wall - p.x_src) / p.courant)
 
     def reset(self):
+        """Resets the simulation to its initial state."""
         self.u.zero_()
         self.u_prev.zero_()
         self.u_next.zero_()
@@ -345,6 +369,7 @@ class TorchWaveSim2D:
         self.rebuild(fresh=True)
 
     def _source_values(self, n):
+        """Returns the source values for n time steps, including phase noise if incoherent."""
         p = self.p
         t = self.t_step + np.arange(n)
         phase = self.omega * p.courant * t + self.phase_offset[0]
@@ -356,6 +381,7 @@ class TorchWaveSim2D:
         return (amplitude * np.sin(phase) * self.src_mask).astype(np.float32)
 
     def step_n(self, n=1):
+        """Advance n time steps in a single compiled call."""
         if n <= 0:
             return 0
         p = self.p
@@ -398,6 +424,27 @@ class TorchWaveSim2D:
 
 @njit(parallel=PARALLEL, cache=False)
 def _one_step_3d(u, up, un, c_next, c_prev, C2, sz, sy, sx, sv, x0, x1, I_det, avg):
+    """One leapfrog step in 3D, fused.
+    un = mask * ( dn * (2u + C2*lap(u)) - dn*dp * up + source )
+    with c_next = dn*mask and c_prev = dn*dp*mask precomputed
+    
+    :param u: current field
+    :param up: previous field
+    :param un: next field (output)
+    :param c_next: precomputed damping * mask for next field
+    :param c_prev: precomputed damping * damping_prev * mask for previous field
+    :param C2: courant^2
+    :param sz: z-coordinate of the source
+    :param sy: y-coordinate of the source
+    :param sx: x-coordinate of the source
+    :param sv: source value to inject
+    :param x0: left edge of the detector
+    :param x1: right edge of the detector
+    :param I_det: detector intensity accumulator (output)
+    :param avg: number of steps to average over for the detector
+    
+    :return None: modifies un and I_det in place
+    """
     nz, ny, nx = u.shape
     two = np.float32(2.0)
     six = np.float32(6.0)
@@ -432,6 +479,7 @@ def _one_step_3d(u, up, un, c_next, c_prev, C2, sz, sy, sx, sv, x0, x1, I_det, a
 
 @njit(cache=False)
 def _run_steps_3d(u, up, un, cn, cp, C2, sz, sy, sx, sv_arr, x0, x1, I_det, avg):
+    """Run len(sv_arr) steps in 3D, rotating the three buffers. Returns (u, u_prev, u_next)."""
     for n in range(sv_arr.shape[0]):
         _one_step_3d(u, up, un, cn, cp, C2, sz, sy, sx, sv_arr[n], x0, x1, I_det, avg)
         u, up, un = un, u, up
@@ -456,6 +504,7 @@ def _warmup_3d():
 
 
 class _Base3d:
+    """Base class for 3D wave simulation backends."""
     AVG_STEPS = 480
     label = ""
 
@@ -469,6 +518,7 @@ class _Base3d:
         self.rebuild(fresh=True)
 
     def _build_damping(self):
+        """Builds a damping profile for the sponge boundary conditions in 3D."""
         p = self.p
 
         def depth(n):
@@ -483,6 +533,7 @@ class _Base3d:
         self.dnext = (1 / (1 + 0.5 * damping)).astype(np.float32)
 
     def rebuild(self, fresh=False):
+        """Rebuilds the simulation state, including the wall mask and source position. If fresh is True, the simulation is reset to its initial state."""
         p = self.p
         yc, zc = p.ny / 2, p.nz / 2
         y, z = np.arange(p.ny), np.arange(p.nz)
@@ -528,11 +579,13 @@ class _Base3d:
             self.settle += int((p.x_wall - p.x_src) / p.courant)
 
     def reset(self):
+        """Resets the simulation to its initial state."""
         self._zero_state()
         self.t_step = 0
         self.rebuild(fresh=True)
 
     def _source_values(self, n):
+        """Returns the source values for n time steps, including phase noise if incoherent."""
         p = self.p
         t = self.t_step + np.arange(n)
         phase = self.omega * p.courant * t + self.phase_offset
@@ -564,6 +617,7 @@ class WaveSim3D(_Base3d):
         super().__init__(p)
 
     def _alloc_state(self):
+        """Allocates the simulation state arrays."""
         shape = (self.nz, self.ny, self.nx)
         self.u = np.zeros(shape, np.float32)
         self.u_prev = np.zeros_like(self.u)
@@ -571,16 +625,21 @@ class WaveSim3D(_Base3d):
         self.I_det = np.zeros((self.ny, self.nz), np.float32)
 
     def _zero_state(self):
+        """Zeros the simulation state arrays."""
         self.u.fill(0)
         self.u_prev.fill(0)
         self.u_next.fill(0)
         self.I_det.fill(0)
 
     def _upload_coeffs(self, cn, cp):
+        """Uploads the simulation coefficients to the device.
+        Makes sure they are contiguous and of type float32.
+        """
         self.cn = np.ascontiguousarray(cn, dtype=np.float32)
         self.cp = np.ascontiguousarray(cp, dtype=np.float32)
 
     def _advance(self, sv):
+        """Advance the simulation by one time step with the given source values."""
         p = self.p
         if not (0 <= self.src_y[0] < self.ny and 0 <= p.x_src < self.nx and 0 <= p.x_det < self.nx):
             raise ValueError("source or detector outside the grid")
@@ -615,6 +674,7 @@ class TorchWaveSim3D(_Base3d):
         super().__init__(p)
 
     def _alloc_state(self):
+        """Allocates the simulation state arrays on the specified device."""
         shape = (self.nz, self.ny, self.nx)
         self.u = torch.zeros(shape, dtype=torch.float32, device=self.device)
         self.u_prev = torch.zeros_like(self.u)
@@ -622,16 +682,19 @@ class TorchWaveSim3D(_Base3d):
         self.I_det = torch.zeros((self.ny, self.nz), dtype=torch.float32, device=self.device)
 
     def _zero_state(self):
+        """Zeros the simulation state arrays on the specified device."""
         self.u.zero_()
         self.u_prev.zero_()
         self.u_next.zero_()
         self.I_det.zero_()
 
     def _upload_coeffs(self, cn, cp):
+        """Uploads the simulation coefficients to the device."""
         self.cn = torch.from_numpy(np.ascontiguousarray(cn, dtype=np.float32)).to(self.device)
         self.cp = torch.from_numpy(np.ascontiguousarray(cp, dtype=np.float32)).to(self.device)
 
     def _advance(self, sv_np):
+        """Advance the simulation by one time step with the given source values."""
         p = self.p
         sv = torch.from_numpy(sv_np).to(self.device)
         u, up, un = self.u, self.u_prev, self.u_next
@@ -667,6 +730,9 @@ class TorchWaveSim3D(_Base3d):
         return self.I_det[:, self.nz // 2].detach().cpu().numpy()
 
 
+
+# C++ backend support in Python
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SOURCE_DIR = os.path.join(_HERE, "C-port")
 _EXTENSION = {"win32": ".dll", "darwin": ".dylib"}.get(sys.platform, ".so")
@@ -685,6 +751,7 @@ _PARAM_NAMES = (
 
 
 def _build_library():
+    """Builds the C++ backend library if it does not exist or is out of date."""
     compiler = shlex.split(os.environ.get("CXX", "g++"))
     if not compiler or shutil.which(compiler[0]) is None:
         raise RuntimeError(
@@ -716,6 +783,7 @@ def _build_library():
 
 
 def _load_library():
+    """Loads the C++ backend library, building it if necessary."""
     global _LIBRARY, _DLL_DIRECTORY
     if _LIBRARY is not None:
         return _LIBRARY
@@ -758,7 +826,17 @@ def _load_library():
     return library
 
 
-def _check(library, result):
+
+def _check(library: ctypes.CDLL, result: int) -> None:
+    """Checks the result of a C++ backend call and raises an exception if it indicates an error.
+    
+    :param library: The loaded C++ backend library.
+    :param result: The result code returned by a C++ backend function.
+    
+    :raises RuntimeError: If the result code is non-zero, indicating an error.
+    
+    :returns: None
+    """
     if result != 0:
         message = library.sim_last_error()
         detail = message.decode("utf-8", errors="replace") if message else "unknown C++ error"

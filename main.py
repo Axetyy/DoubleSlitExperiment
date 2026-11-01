@@ -1,3 +1,19 @@
+"""
+Main script for the double-slit experiment.
+
+This is where you run the simulation and visualize the results. It uses the parameters defined in config.py to set up the simulation, and then runs the simulation step by step, updating the matplotlib figures to show the wave field propagating. It is through using this script that you can interact with the simulation, changing parameters and observing how the wave field and detector readings change in response.
+
+The simulation can be run in 2D or 3D, and can use different backends for the wave simulation including:
+    - Numba ( CPU ), a powerful just-in-time compiler for Python that can speed up numerical computations by compiling python to machine code at runtime.
+    - C++ ( CPU )
+    - PyTorch ( CPU or GPU ), a popular machine learning library that can also be used for general numerical computations, and can leverage the power of GPUs for faster computation.
+
+The simulation can also be run in particle mode, where a sampler simulates the detection of indvidual photons at the detector, and the results are compared to the expected Fraunhofer diffraction pattern. ( Monte Carlo simulation of photon detection. )
+
+"""
+
+
+
 import os
 import subprocess
 import sys
@@ -36,6 +52,7 @@ try:
     import physics.core as physics3d
 except Exception:
     physics3d = None
+
 DIM = 2
 DEV = "CPU"
 p2 = Params()
@@ -114,19 +131,34 @@ ax_p.legend(handles=[line_I, line_F], loc="upper right", fontsize=7)
 note = fig.text(0.5, 0.005, "", ha="center", fontsize=8, color="crimson")
 
 def say(msg):
+    """
+    Display a message in the note area.
+    """
     note.set_text(msg) 
  
 def set_status(msg):
+    """
+    Set the status message in the top-left corner of the main plot.
+    """
     status.set_text(msg)
     status3.set_text(msg)
 
 def get_field():
+    """
+    Returns the field slice of the simulation.
+    """
     return sim.field_slice() if hasattr(sim, "field_slice") else sim.u
  
 def det_profile():
+    """
+    Returns the detector profile of the simulation.
+    """
     return sim.detector_profile() if hasattr(sim, "detector_profile") else sim.I_det
  
 def det_image():
+    """
+    Computes the detector image for the 3D simulation.
+    """
     return sim.detector_image()
 
 screen_color = wavelength_to_rgb(p.wavelength_nm)
@@ -157,8 +189,6 @@ b_reset = Button(fig.add_axes([0.10, 0.27, 0.07, 0.04]), "Reset")
 b_pause = Button(fig.add_axes([0.10, 0.20, 0.07, 0.04]), "Pause")
 
 # Backend import handling inside main
-
-
 
 def configure_geometry():
     global screen_pixel_size_mm, screen_y_mm, screen_z_half, screen_rows
@@ -235,6 +265,9 @@ def set_3d_limits():
     ax_f3.set_box_aspect((xmax, p.ny, p.nz))
 
 def build_sim():
+    """
+    Build the simulation object based on the current parameters and backend selection.
+    """
     global sim, sampler, backend_label, DEV
     dev = DEV
     if dev == "GPU" and not cuda_available():
@@ -277,6 +310,9 @@ def clear_particles():
     sampler.reset()
 
 def refresh_static():
+    """
+    Refresh the static elements of the simulation. such as the wall, source and Fraunhofer profile. This is called whenever the simulation parameters are changed, to update the visual representation of the simulation.
+    """
     global fraunhofer_profile, wall_bars
     if DIM == 2:
         rgba = np.zeros((len(screen_rows), p.nx, 4), np.uint8)
@@ -308,6 +344,9 @@ def refresh_static():
     line_F.set_data(fraunhofer_profile, screen_y_mm)
 
 def apply_mode_visuals():
+    """
+    Handles the switch between wave and particle mode.
+    """
     pm = p.particle_mode
     im.set_alpha(0.3 if pm else 1.0)
     hit_sc.set_visible(pm and DIM == 2)
@@ -322,6 +361,9 @@ def apply_mode_visuals():
     clear_particles()
 
 def activate():
+    """
+    Activate the simulation with the current parameters.
+    """
     global p, slice_surf, screen_surf
     p = p3 if DIM == 3 else p2
     p.coherent = rb_coh.value_selected == "Coherent"
@@ -340,6 +382,10 @@ def activate():
 
 # Callbacks and Event Handlers
 def on_param(_=None):
+    """
+    Event handler that gets called whenever a parameter slider is changed. It updates the simulation parameters and refreshes the static elements of the simulation.
+    """
+
     global screen_arrival_step, screen_color
     p.wavelength_nm = s_lam.val
     p.slit_width_um = s_a.val
@@ -369,6 +415,9 @@ def on_param(_=None):
     clear_particles()
 
 def on_dim(label):
+    """
+    Handle the change of dimension.
+    """
     global DIM, DEV
     new = 3 if label == "3D" else 2
     if new == DIM:
@@ -380,6 +429,9 @@ def on_dim(label):
     activate()
 
 def on_dev(label):
+    """
+    Handle the change of device.
+    """
     global DEV
     previous = DEV
     DEV = label
@@ -395,16 +447,25 @@ def on_dev(label):
     clear_particles()
 
 def on_mode(label):
+    """
+    Handle the change of simulation mode (wave or particle).
+    """
     p.particle_mode = label == "Particle"
     apply_mode_visuals()
 
 def on_coherence(label):
+    """
+    Handle the change of coherence (coherent or incoherent).
+    """
     p.coherent = label == "Coherent"
     sim.reset()
     refresh_static()
     clear_particles()
 
 def on_reset(_):
+    """
+    Handle the reset button click.
+    """
     sim.reset()
     clear_particles()
 
@@ -422,6 +483,9 @@ b_reset.on_clicked(on_reset)
 b_pause.on_clicked(on_pause)
 
 def draw_3d(disp):
+    """
+    Draw the 3D surface.
+    """
     global slice_surf, screen_surf
     cmap = plt.get_cmap("coolwarm")
     xs = min(p.nx, p.x_det + 9)
@@ -455,6 +519,9 @@ def draw_3d(disp):
                                      shade=False, linewidth=0, antialiased=False)
 
 def update(frame):
+    """
+    Update the simulation. Time step.
+    """
     if not state["paused"]:
         sim.step_n(int(s_spf.val))
         if p.particle_mode and sim.t_step >= screen_arrival_step:
@@ -531,5 +598,6 @@ def update(frame):
         set_status("wave travelling to screen..." if sim.t_step < screen_arrival_step else "")
 
 activate()
-anim = FuncAnimation(fig, update, interval=15, cache_frame_data=False)
+# Cache frame data for smoother animation
+anim = FuncAnimation(fig, update, interval=15, cache_frame_data=True) 
 plt.show()

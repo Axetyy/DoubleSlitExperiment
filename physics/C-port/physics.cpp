@@ -21,31 +21,36 @@ namespace math_stuff
 
 namespace
 {
-void validateParams(const Params &p)
-{
-    if (p.nx <= 0 || p.ny <= 0 || p.sponge <= 0 ||
-        p.sponge > (p.ny - 1) / 2 || p.sponge > (p.nx - 1) / 2)
-        throw std::invalid_argument("grid dimensions and sponge width are invalid");
-    if (p.x_src < 0 || p.x_src >= p.nx ||
-        p.x_wall < 0 || p.x_wall > p.nx ||
-        p.x_det < 0 || p.x_det >= p.nx ||
-        p.wall_thickness < 0 || p.detector_width <= 0 ||
-        p.n_slits <= 0)
-        throw std::invalid_argument("source, wall, detector, or slit parameters are invalid");
-    if (!std::isfinite(p.courant) || p.courant <= 0.0f ||
-        !std::isfinite(p.wavelength) || p.wavelength <= 0.0f ||
-        !std::isfinite(p.slit_width) || p.slit_width < 0.0f ||
-        !std::isfinite(p.slit_spacing) || p.slit_spacing < 0.0f ||
-        !std::isfinite(p.source_angle_deg))
-        throw std::invalid_argument("wave parameters must be finite and in range");
+    // Validate Params fields for reasonable values. Throws std::invalid_argument if invalid.
+    void validateParams(const Params &p)
+    {
+        if (p.nx <= 0 || p.ny <= 0 || p.sponge <= 0 ||
+            p.sponge > (p.ny - 1) / 2 || p.sponge > (p.nx - 1) / 2)
+            throw std::invalid_argument("grid dimensions and sponge width are invalid");
+        if (p.x_src < 0 || p.x_src >= p.nx ||
+            p.x_wall < 0 || p.x_wall > p.nx ||
+            p.x_det < 0 || p.x_det >= p.nx ||
+            p.wall_thickness < 0 || p.detector_width <= 0 ||
+            p.n_slits <= 0)
+            throw std::invalid_argument("source, wall, detector, or slit parameters are invalid");
+        if (!std::isfinite(p.courant) || p.courant <= 0.0f ||
+            !std::isfinite(p.wavelength) || p.wavelength <= 0.0f ||
+            !std::isfinite(p.slit_width) || p.slit_width < 0.0f ||
+            !std::isfinite(p.slit_spacing) || p.slit_spacing < 0.0f ||
+            !std::isfinite(p.source_angle_deg))
+            throw std::invalid_argument("wave parameters must be finite and in range");
+    }
 }
-}
-
+/// @brief Fill the tensor with a constant value.
+/// @param v
 void Tensor2D::fill(float v)
 {
     for (auto &r : d_)
         std::fill(r.begin(), r.end(), v);
 }
+
+/// @brief Assign the values of another tensor to this tensor.
+/// @param other
 void Tensor2D::assign(const Tensor2D &other)
 {
     requireSameShape(other, "assign");
@@ -54,6 +59,9 @@ void Tensor2D::assign(const Tensor2D &other)
         std::copy(other.d_[y].begin(), other.d_[y].end(), d_[y].begin());
     }
 }
+/// @brief Add another tensor to this tensor.
+/// @param o
+/// @return refrence to this tensor after addition
 Tensor2D &Tensor2D::operator+=(const Tensor2D &o)
 {
     requireSameShape(o, "+=");
@@ -69,7 +77,9 @@ Tensor2D &Tensor2D::operator+=(const Tensor2D &o)
     }
     return *this;
 }
-
+/// @brief Subtract another tensor from this tensor in place.
+/// @param o
+/// @return reference to this tensor after subtraction
 Tensor2D &Tensor2D::operator-=(const Tensor2D &o)
 {
     requireSameShape(o, "-=");
@@ -85,7 +95,9 @@ Tensor2D &Tensor2D::operator-=(const Tensor2D &o)
     }
     return *this;
 }
-
+/// @brief Multiply this tensor by another tensor in place.
+/// @param o
+/// @return reference to this tensor after multiplication
 Tensor2D &Tensor2D::operator*=(const Tensor2D &o)
 {
     requireSameShape(o, "*=");
@@ -101,7 +113,9 @@ Tensor2D &Tensor2D::operator*=(const Tensor2D &o)
     }
     return *this;
 }
-
+/// @brief Multiply this tensor by a scalar in place.
+/// @param s
+/// @return reference to this tensor after multiplication
 Tensor2D &Tensor2D::operator*=(float s)
 {
 #ifdef _OPENMP
@@ -115,7 +129,9 @@ Tensor2D &Tensor2D::operator*=(float s)
     }
     return *this;
 }
-
+/// @brief Add a scalar to this tensor in place.
+/// @param s
+/// @return reference to this tensor after addition
 Tensor2D &Tensor2D::operator+=(float s)
 {
     for (auto &r : d_)
@@ -125,7 +141,11 @@ Tensor2D &Tensor2D::operator+=(float s)
     }
     return *this;
 }
-
+/// @brief Add the element-wise product of two tensors to this tensor.
+/// @param a
+/// @param b
+/// @param alpha
+/// @return reference to this tensor after addition
 Tensor2D &Tensor2D::addcmul(const Tensor2D &a, const Tensor2D &b, float alpha)
 {
     requireSameShape(a, "addcmul");
@@ -143,6 +163,9 @@ Tensor2D &Tensor2D::addcmul(const Tensor2D &a, const Tensor2D &b, float alpha)
     }
     return *this;
 }
+/// @brief Compute the matrix product of this tensor with another tensor.
+/// @param o
+/// @return the resulting tensor
 Tensor2D Tensor2D::matmul(const Tensor2D &o) const
 {
     if (cols_ != o.rows_)
@@ -164,7 +187,8 @@ Tensor2D Tensor2D::matmul(const Tensor2D &o) const
     }
     return out;
 }
-
+/// @brief Compute the Laplacian of this tensor and store the result in another tensor.
+/// @param out
 void Tensor2D::laplacianInto(Tensor2D &out) const
 {
     requireSameShape(out, "laplacianInto");
@@ -190,6 +214,10 @@ void Tensor2D::laplacianInto(Tensor2D &out) const
     }
 }
 
+/// @brief Compute the mean of the squares of the elements in each row of this tensor.
+/// @param x0
+/// @param x1
+/// @param out the resulting vector of row means
 void Tensor2D::rowMeanSq(int x0, int x1, std::vector<float> &out) const
 {
     x0 = std::max(0, x0);
@@ -208,6 +236,8 @@ void Tensor2D::rowMeanSq(int x0, int x1, std::vector<float> &out) const
     }
 }
 
+/// @brief Flattens the tensor into a single vector in row-major order.
+/// @return the flattened tensor
 std::vector<float> Tensor2D::flatten() const
 {
     std::vector<float> f;
@@ -217,6 +247,9 @@ std::vector<float> Tensor2D::flatten() const
     return f;
 }
 
+/// @brief Initialize a WaveSimulator with the given parameters and optional random seed.
+/// @param p
+/// @param seed
 WaveSimulator::WaveSimulator(const Params &p, std::uint64_t seed) : p_(p)
 {
     validateParams(p_);
@@ -236,6 +269,7 @@ WaveSimulator::WaveSimulator(const Params &p, std::uint64_t seed) : p_(p)
     buildAbsorber();
     rebuild(true);
 }
+/// @brief Build the absorber (dampening) coefficients for the simulation.
 void WaveSimulator::buildAbsorber()
 {
     const int nx = p_.nx, ny = p_.ny;
@@ -267,7 +301,8 @@ void WaveSimulator::buildAbsorber()
         }
     }
 }
-
+/// @brief Rebuild the simulation state, optionally resetting to a fresh state.
+/// @param fresh
 void WaveSimulator::rebuild(bool fresh)
 {
     const int nx = p_.nx, ny = p_.ny;
@@ -316,7 +351,7 @@ void WaveSimulator::rebuild(bool fresh)
     if (fresh)
         settle_ += static_cast<int>((p_.x_wall - p_.x_src) / static_cast<double>(p_.courant));
 }
-
+/// @brief Reset the simulation state to initial conditions.
 void WaveSimulator::reset()
 {
     validateParams(p_);
@@ -328,6 +363,9 @@ void WaveSimulator::reset()
     rebuild(true);
 }
 
+/// @brief Source value at a given time step, considering coherence and noise.
+/// @param t
+/// @return the computed source value
 float WaveSimulator::sourceValue(long long t)
 {
     double phase = omega_ * p_.courant * static_cast<double>(t) + phase_offset_;
@@ -340,6 +378,8 @@ float WaveSimulator::sourceValue(long long t)
     return static_cast<float>(amp * std::sin(phase) * src_mask_);
 }
 
+/// @brief Perform a specified number of simulation steps.
+/// @param n
 void WaveSimulator::step_n(int n)
 {
     if (n <= 0)
