@@ -81,7 +81,11 @@ The simulation uses a unified physics interface. The available backends and spat
 ```text
 DoubleSlitExperiment/
 │
-├── main.py                 # Main application and UI
+├── main.py                 # Matplotlib application wiring and callbacks
+├── controller.py           # Simulation lifecycle, backends, and frame data
+├── matplotlib_ui.py        # Matplotlib axes, controls, and rendering
+├── ui/
+│   └── ui.py               # UI helpers and renderer-neutral WaveFrame contract
 ├── config.py               # Simulation parameters
 ├── reference.py            # Fraunhofer reference patterns
 ├── utils.py                # Shared helper functions

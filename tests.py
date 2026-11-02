@@ -23,7 +23,7 @@ from physics import (
     pick_device,
 )
 from physics import *
-from reference import (
+from utils.reference import (
     _numerical_wavenumber,
     _numerical_wavenumber_3d,
     fraunhofer,
@@ -31,7 +31,7 @@ from reference import (
 )
 from sampling.sampling import ParticleSampler
 from sampling.sampling3d import ParticleSampler3D
-from utils import high_res_screen, runs, wavelength_to_rgb
+from utils.utils import high_res_screen, runs, wavelength_to_rgb
 
 
 def small_params(**overrides):
